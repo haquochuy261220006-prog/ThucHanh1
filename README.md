@@ -5,3 +5,4 @@ ok
 -- Hiện tại dự án đang để sang Private Không để Public đâu nhé tránh bị lộ hàng 
 # cứt
 # Đề nghị nguyễn tiến đạt im lặng
+# leader tìm chủ đề đi
