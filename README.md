@@ -5,7 +5,7 @@
 
 -Hướng phát triển:
 # Thành viên tham gia dự án:
-*Số lượng thành viên 5*:  
+**Số lượng thành viên 5**:  
 
 Hà Quốc Huy  
 
