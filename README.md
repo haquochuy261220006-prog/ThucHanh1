@@ -1,4 +1,6 @@
-# ThucHanh1
-# Phân Việc Thành Viên nhóm
-Hiện tại mấy ae chưa có việc cứ đăng nhập add các thành viên nhóm đi nhé
 # Tên dự án thực hiện : Hệ thống Quản lý Bán hàng & Tồn kho Thông minh (Smart POS & Inventory)
+-Mô tả chung về dự án:
+-Mục tiêu dự án:
+-Hướng phát triển:
+# Công Việc thực hiện:
+-
