@@ -29,9 +29,9 @@ Ngôn ngữ sử dụng: PostgreSQL
 
 -Tất cả thành viên nhóm học kĩ lại OOP rồi mỗi thành viên trình bày lại cho nhau (sl:5):
 
--Tất cả viên học thêm Java bổ trợ cho OOP
+-Tất cả viên học thêm Java bổ trợ cho OOP (sl:5):
 
--Tìm hiểu và học thêm Spring Boot
+-Tìm hiểu và học thêm Spring Boot, Spring Data JPA (sử dụng các lớp định nghĩa @Entity để đối chiếu dữ liệu ( ánh xạ ) trực tiếp xuống PostgreSQL) (sl:5):
 
 
 
