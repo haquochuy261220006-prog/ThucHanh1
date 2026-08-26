@@ -23,7 +23,7 @@ Lâm Quang Vinh
 
 **Backendcore & Database**:
 
--Tìm hiểu thiết kế phân tích mô hình ERD rồi tình bày giải thích chi tiết các thành viên trong nhóm _ Quy tắc đặt tên bảng chuẩn theo quy tắc tiếng anh (VD: Users, Products,....) (sl:1) :
+-Tìm hiểu thiết kế phân tích mô hình ERD rồi tình bày giải thích chi tiết các thành viên trong nhóm _ Quy tắc đặt tên bảng chuẩn theo quy tắc tiếng anh (VD: Users, Products,....) (sl:5) :
 
 Ngôn ngữ sử dụng: PostgreSQL
 
