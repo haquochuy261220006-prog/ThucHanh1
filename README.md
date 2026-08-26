@@ -4,8 +4,8 @@
 -Mục tiêu dự án:  
 
 -Hướng phát triển:
-# Công Việc thực hiện triển khai nhiệm vụ:
-*Số lượng thành viên 5*:  \
+# Thành viên tham gia dự án:
+*Số lượng thành viên 5*:  
 
 Hà Quốc Huy  
 
@@ -16,5 +16,7 @@ Nguyễn Duy Mạnh
 Triệu Hoàng Mạnh  
 
 Lâm Quang Vinh
+
+# Công việc nhiệm vụ triển khai (Task):
 
 
