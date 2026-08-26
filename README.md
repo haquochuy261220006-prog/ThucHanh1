@@ -1,3 +1,4 @@
+**Ngày triển khai dự án**: 26/08/2026 
 # Tên dự án thực hiện : Hệ thống Quản lý Bán hàng & Tồn kho Thông minh (Smart POS & Inventory)
 -Mô tả chung về dự án:  
 
