@@ -1,0 +1,58 @@
+{% extends 'base.html' %}{% block title %}Tổng quan · QLNS{% endblock %}{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue"></span>
+        <h1>Tổng quan nghiệp vụ</h1>
+        <p>Theo dõi tình hình nhân sự và các hoạt động mới nhất.</p>
+    </div>
+    <span class="date-chip">◷　{{now or ''}} {{''}}</span>
+</div>{% if stats.error %}
+<div class="flash error">Chưa kết nối được cơ sở dữ liệu: {{stats.error}}
+    <br>Kiểm tra tên SQL Server trong file 
+    <b>config.py</b>.</div>{% endif %}
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-icon blue-bg">♙</div>
+            <span>Nhân viên đang làm</span>
+            <strong>{{stats.staff or 0}}</strong>
+            <small>Hồ sơ nhân sự hiện tại</small>
+        </div><div class="stat-card">
+            <div class="stat-icon purple-bg">▤</div>
+            <span>Phòng ban</span>
+            <strong>{{stats.departments or 0}}</strong>
+            <small>Các đơn vị tổ chức</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green-bg">▣</div>
+            <span>Hợp đồng hiệu lực</span>
+            <strong>{{stats.contracts or 0}}</strong>
+            <small>Đang được quản lý</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange-bg">▧</div>
+            <span>Đơn nghỉ chờ duyệt</span>
+            <strong>{{stats.leaves or 0}}</strong>
+            <small>Cần xử lý</small>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Nhân viên mới cập nhật</h2>
+                <p>Danh sách hồ sơ gần đây trong hệ thống</p>
+            </div>{% if admin %}
+            <a class="btn secondary" href="{{url_for('module',key='nhanvien')}}">Quản lý nhân viên　→</a>{% endif %}
+        </div>{% if cols %}<div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>{% for row in rows %}
+                    <tr>{% for v in row %}
+                        <td>{{v if v is not none else '—'}}</td>{% endfor %}</tr>{% else %}
+                        <tr>
+                            <td colspan="{{cols|length}}" class="empty">Chưa có dữ liệu nhân viên.</td>
+                        </tr>{% endfor %}</tbody>
+                    </table>
+                </div>{% else %}
+                <div class="empty">Chưa có dữ liệu để hiển thị.</div>{% endif %}</div>{% endblock %}
