@@ -1,0 +1,115 @@
+{% extends 'base.html' %}{% block title %}Soạn hợp đồng bằng AI · QLNS{% endblock %}{% block content %}
+<div class="contract-ai">
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">QUẢN TRỊ DỮ LIỆU</span>
+        <h1>Soạn hợp đồng bằng AI</h1>
+        <p>Chọn hợp đồng, để AI soạn điều khoản, chỉnh sửa rồi tải về file Word.</p>
+    </div>
+    <div class="actions"><span class="ai-badge {{'' if ai_on else 'off'}}">{{'AI đang bật · '+model if ai_on else 'Chưa có API key · dùng mẫu chuẩn'}}</span>
+    <a class="btn secondary" href="{{url_for('contracts.ai_test')}}">⚡　Kiểm tra kết nối AI</a></div>
+</div>
+{% if not company_ok %}<div class="flash error">Chưa khai báo thông tin công ty trong <b>config.py</b> (mục COMPANY).</div>{% endif %}
+
+<form method="post" action="{{url_for('contracts.soan')}}" class="panel">
+    <div class="panel-head"><div><h2>1. Thông tin hợp đồng</h2><p>Dữ liệu nhân viên, lương, ngày tháng lấy từ cơ sở dữ liệu; AI chỉ viết phần điều khoản.</p></div></div>
+    {% if c %}
+    <div class="summary">
+        <div><small>Nhân viên</small><b>{{c.HoTen}}</b></div>
+        <div><small>Loại hợp đồng</small><b>{{c.LoaiHD}}</b></div>
+        <div><small>Thời gian</small><b>{{c.NgayBatDau}} → {{c.NgayKetThuc or 'Không thời hạn'}}</b></div>
+        <div><small>Lương HĐ</small><b>{{'{:,.0f}'.format(c.LuongHD).replace(',','.')}} đ</b></div>
+    </div>
+    {% endif %}
+    <div class="data-form">
+        <div class="form-grid">
+            <div class="field wide">
+                <label>Nguồn thông tin</label>
+                <div class="checks">
+                    <label><input type="radio" name="mode" value="moi" {% if mode=='moi' %}checked{% endif %} onchange="modeSwitch()"> Soạn mới (chọn nhân viên + loại hợp đồng)</label>
+                    <label><input type="radio" name="mode" value="co" {% if mode!='moi' %}checked{% endif %} onchange="modeSwitch()"> Dùng hợp đồng đã có trong hệ thống ({{contracts|length}})</label>
+                </div>
+            </div>
+
+            <div id="mode-moi" class="form-grid wide" style="grid-column:1/-1;display:contents">
+                <div class="field wide">
+                    <label>Nhân viên *</label>
+                    <select name="manv" id="manv" onchange="fillLuong()">
+                        <option value="">-- Chọn nhân viên --</option>
+                        {% for e in employees %}<option value="{{e[0]}}" data-luong="{{'%d'|format(e[3] or 0)}}" {% if form.manv|string==e[0]|string %}selected{% endif %}>NV{{e[0]}} · {{e[1]}}{% if e[2] %} · {{e[2]}}{% endif %}</option>{% endfor %}
+                    </select>
+                    {% if not employees %}<small style="color:var(--muted)">Chưa có nhân viên đang làm. Hãy thêm nhân viên ở mục Nhân viên trước.</small>{% endif %}
+                </div>
+                <div class="field">
+                    <label>Loại hợp đồng *</label>
+                    <select name="loai" id="loai">
+                        {% for t in types %}<option value="{{t}}" {% if form.loai==t %}selected{% endif %}>{{t}}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="field"><label>Ngày bắt đầu</label><input type="date" name="ngay_bd" value="{{form.ngay_bd}}"></div>
+                <div class="field"><label>Ngày kết thúc <small>(bỏ trống nếu không thời hạn)</small></label><input type="date" name="ngay_kt" value="{{form.ngay_kt}}"></div>
+                <div class="field wide"><label>Lương / thù lao (đồng/tháng)</label><input type="number" min="0" name="luong" id="luong" value="{{form.luong}}" placeholder="Tự điền theo lương cơ bản của nhân viên, có thể sửa"></div>
+            </div>
+
+            <div id="mode-co" class="field wide">
+                <label>Hợp đồng đã có</label>
+                <select name="MaHD" onchange="if(this.value){window.location='{{url_for('contracts.soan')}}?mahd='+this.value}">
+                    <option value="">{{ '-- Chọn hợp đồng --' if contracts else '-- Chưa có hợp đồng nào, hãy chọn "Soạn mới" --' }}</option>
+                    {% for r in contracts %}<option value="{{r[0]}}" {% if c and c.MaHD==r[0] %}selected{% endif %}>HĐ #{{r[0]}} · {{r[1]}} · {{r[2]}} · từ {{r[3]}}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field"><label>Số hợp đồng</label><input name="so_hd" value="{{so_hd}}"></div>
+            <div class="field"><label>Ngày ký</label><input type="date" name="ngay_ky" value="{{ngay_ky}}"></div>
+            <div class="field"><label>Giờ làm việc</label><input name="gio_lam" value="{{opts.gio_lam or ''}}" placeholder="VD: 8h30–17h30, thứ Hai–thứ Sáu"></div>
+            <div class="field wide"><label>Địa điểm làm việc</label><input name="dia_diem" value="{{opts.dia_diem or ''}}" placeholder="Để trống = địa chỉ công ty"></div>
+            <div class="field wide"><label>Phụ cấp / chế độ khác</label><input name="phu_cap" value="{{opts.phu_cap or ''}}" placeholder="VD: phụ cấp ăn trưa 730.000 đ/tháng, phụ cấp xăng xe 500.000 đ/tháng"></div>
+            <div class="field wide">
+                <label>Yêu cầu bổ sung cho AI</label>
+                <textarea name="yeu_cau" rows="3" placeholder="VD: thêm điều khoản làm việc từ xa 2 ngày/tuần; thời gian báo trước khi nghỉ việc 30 ngày">{{opts.yeu_cau or ''}}</textarea>
+            </div>
+            <div class="field wide checks">
+                <label><input type="checkbox" name="bao_mat" {% if opts.bao_mat %}checked{% endif %}> Điều khoản bảo mật thông tin</label>
+                <label><input type="checkbox" name="so_huu_tri_tue" {% if opts.so_huu_tri_tue %}checked{% endif %}> Điều khoản sở hữu trí tuệ</label>
+                {% if web_ok %}<label><input type="checkbox" name="web" {% if opts.web %}checked{% endif %}> 🌐 Cho AI tra cứu web để cập nhật quy định mới nhất (chậm hơn 10–30 giây)</label>{% endif %}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn primary" name="action" value="generate">✦　{{'Soạn lại bằng AI' if text else 'Soạn bản nháp bằng AI'}}</button>
+        </div>
+    </div>
+
+    {% if text %}
+    <div class="panel-head"><div><h2>2. Xem lại và chỉnh sửa điều khoản</h2><p>Mỗi dòng "Điều N. ..." sẽ được in đậm trong file Word. Bạn có thể sửa trực tiếp.</p></div></div>
+    <div class="data-form">
+        <textarea class="editor" name="noi_dung" rows="22">{{text}}</textarea>
+        {% if ai_on %}
+        <div class="form-grid" style="margin-top:18px">
+            <div class="field wide">
+                <label>Nhờ AI chỉnh sửa</label>
+                <input name="chinh_sua" placeholder="VD: rút gọn điều 3, thêm quy định về làm thêm giờ">
+            </div>
+        </div>
+        {% endif %}
+        <div class="form-actions">
+            {% if ai_on %}<button class="btn secondary" name="action" value="revise">✎　AI chỉnh sửa theo yêu cầu</button>{% endif %}
+            {% if mode=='moi' %}<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-right:auto"><input type="checkbox" name="luu" id="luu"> Đồng thời lưu hợp đồng vào danh sách Hợp đồng</label>{% endif %}
+            <button class="btn primary" name="action" value="download" onclick="setTimeout(function(){var l=document.getElementById('luu');if(l)l.checked=false},400)">↓　Tải file Word (.docx)</button>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin:14px 0 0">⚠ Nội dung do AI soạn chỉ là bản nháp. Cần bộ phận nhân sự/pháp chế rà soát trước khi ký.</p>
+    </div>
+    {% endif %}
+</form>
+</div>
+<script>
+function modeSwitch(){
+    var moi = document.querySelector('input[name=mode]:checked').value === 'moi';
+    document.getElementById('mode-moi').style.display = moi ? 'contents' : 'none';
+    document.getElementById('mode-co').style.display = moi ? 'none' : '';
+}
+function fillLuong(){
+    var o = document.getElementById('manv').selectedOptions[0], l = document.getElementById('luong');
+    if(o && o.dataset.luong && Number(o.dataset.luong) > 0) l.value = o.dataset.luong;
+}
+modeSwitch();
+</script>
+{% endblock %}

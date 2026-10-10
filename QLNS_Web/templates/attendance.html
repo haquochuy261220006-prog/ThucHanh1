@@ -1,0 +1,37 @@
+{% extends 'base.html' %}{% block title %}Chấm công · QLNS{% endblock %}{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">NGHIỆP VỤ</span>
+        <h1>Chấm công</h1><p>Ghi nhận giờ vào, giờ ra và trạng thái làm việc trong ngày.</p>
+    </div>
+    <span class="date-chip">Hôm nay · {{today}}</span>
+</div>
+    <div class="panel"><div class="panel-head">
+        <div>
+        <h2>Ghi nhận chấm công</h2>
+        <p>Chọn nhân viên để ghi giờ vào hoặc giờ ra.</p>
+    </div>
+</div>
+    <form method="post" class="attendance-form">
+        <div class="field"><label>Nhân viên</label>
+            <select name="MaNV" required><option value="">-- Chọn nhân viên --</option>{% for p in people %}
+                <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}</select>
+            </div>
+                <button class="btn primary" name="action" value="in">◷　Chấm vào</button>
+                <button class="btn secondary" name="action" value="out">✓　Chấm ra</button>
+            </form>
+            </div>
+                <div class="panel"><div class="panel-head"><div><h2>Bảng chấm công hôm nay</h2>
+                    <p>{{rows|length}} bản ghi</p></div></div><div class="table-wrap">
+                        <table>
+                        <thead>
+                            <tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}{% if admin %}<th>Thao tác</th>{% endif %}</tr>
+                        </thead>
+                        <tbody>{% for row in rows %}<tr>{% for v in row %}
+                            <td>{{v if v is not none else '—'}}</td>{% endfor %}{% if admin %}<td class="actions"><form method="post" onsubmit="return confirm('Xóa bản ghi chấm công này?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{row[0]}}"><button class="action-link danger-link">Xóa</button></form></td>{% endif %}</tr>{% else %}<tr>
+                                <td colspan="{{cols|length+(1 if admin else 0)}}" class="empty">Chưa có dữ liệu chấm công hôm nay.</td>
+                            </tr>{% endfor %}
+                        </tbody>
+                        </table>
+                    </div>
+                </div>{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}{% block title %}Nghỉ phép · QLNS{% endblock %}{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">NGHIỆP VỤ</span>
+        <h1>Quản lý nghỉ phép</h1>
+        <p>Gửi đơn nghỉ phép và theo dõi trạng thái xét duyệt.</p>
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Gửi đơn nghỉ phép</h2>
+            <p>Vui lòng điền đầy đủ thông tin ngày nghỉ.</p>
+        </div>
+    </div>
+    <form method="post" class="data-form">
+        <input type="hidden" name="action" value="submit">
+        <div class="form-grid">
+            <div class="field">
+                <label>Nhân viên *</label>
+                <select name="MaNV" required>
+                    <option value="">-- Chọn nhân viên --</option>{% for p in people %}
+                    <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}
+                </select></div><div class="field">
+                    <label>Từ ngày *</label>
+                    <input type="date" name="TuNgay" required></div>
+                    <div class="field">
+                        <label>Đến ngày *</label>
+                        <input type="date" name="DenNgay" required></div>
+                        <div class="field">
+                            <label>Lý do</label>
+                            <input name="LyDo" placeholder="Nhập lý do nghỉ phép"></div>
+                        </div><div class="form-actions">
+                            <button class="btn primary">Gửi đơn nghỉ phép</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h2>Danh sách đơn nghỉ</h2>
+                            <p>{{rows|length}} đơn</p>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>{% for c in cols %}
+                                    <th>{{c}}</th>{% endfor %}{% if admin %}
+                                    <th>Thao tác</th>{% endif %}</tr>
+                                </thead>
+                                <tbody>{% for row in rows %}
+                                    <tr>{% for v in row %}
+                                        <td>{{v if v is not none else '—'}}
+
+                                        </td>{% endfor %}{% if admin %}
+                                        <td><div class="actions">
+                                            <form method="post">
+                                                <input type="hidden" name="id" value="{{row[0]}}">
+                                                <button class="action-link" name="action" value="approve">Duyệt</button>
+                                            </form>
+                                            <form method="post">
+                                                <input type="hidden" name="id" value="{{row[0]}}">
+                                                <button class="action-link danger-link" name="action" value="reject">Từ chối</button>
+                                            </form>
+                                            <form method="post" onsubmit="return confirm('Xóa đơn nghỉ phép này?')">
+                                                <input type="hidden" name="id" value="{{row[0]}}">
+                                                <button class="action-link danger-link" name="action" value="delete">Xóa</button>
+                                            </form>
+                                        </div>
+                                    </td>{% endif %}</tr>{% else %}
+                                    <tr>
+                                        <td colspan="{{cols|length+(1 if admin else 0)}}" class="empty">Chưa có đơn nghỉ phép.</td>
+                                    </tr>{% endfor %}</tbody>
+                                </table>
+                            </div>
+                        </div>{% endblock %}

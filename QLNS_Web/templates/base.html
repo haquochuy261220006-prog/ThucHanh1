@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{% block title %}QLNS{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='style.css', v='crimson2') }}"></head>
+    <body>{% if session.get('user') %}
+        <aside class="sidebar">
+            <a class="brand" href="{{url_for('dashboard')}}">
+                <span class="logo">Q</span>
+                <span><b>QLNS</b>
+                    <small>QUẢN LÝ NHÂN SỰ</small>
+                </span>
+            </a>
+            <div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
+            <a class="nav" href="{{url_for('dashboard')}}">▦　Tổng quan</a>{% if admin %}
+            <div class="nav-label">QUẢN TRỊ DỮ LIỆU</div>
+            <a class="nav" href="{{url_for('module',key='nhanvien')}}">♙　Nhân viên</a>
+            <a class="nav" href="{{url_for('module',key='phongban')}}">▤　Phòng ban</a>
+            <a class="nav" href="{{url_for('module',key='chucvu')}}">✧　Chức vụ</a>
+            <a class="nav" href="{{url_for('module',key='hopdong')}}">▣　Hợp đồng</a>
+            <a class="nav" href="{{url_for('contracts.soan')}}">✎　Soạn HĐ bằng AI</a>{% endif %}
+            <div class="nav-label">NGHIỆP VỤ</div>
+            <a class="nav" href="{{url_for('chamcong')}}">◷　Chấm công</a>
+            <a class="nav" href="{{url_for('nghiphep')}}">▧　Nghỉ phép</a>{% if admin %}
+            <a class="nav" href="{{url_for('luong')}}">＄　Tiền lương</a>
+            <a class="nav" href="{{url_for('baocao')}}">▥　Báo cáo</a>{% endif %}
+            <div class="side-bottom">
+                <div class="avatar">{{session.user.user[:1]|upper}}</div>
+            <div class="profile">
+                <b>{{session.user.user}}</b>
+                <small>{{'Quản trị viên' if admin else 'Nhân viên'}}</small>
+            </div><a class="logout" href="{{url_for('logout')}}" title="Đăng xuất">↪</a>
+        </div></aside><main class="main">
+            <header class="topbar">
+            <div><span class="eyebrow">HỆ THỐNG NỘI BỘ</span>
+                <div class="top-title">Xin chào, {{session.user.user}} 👋</div>
+            </div><div class="top-actions">
+                <span class="status-dot"></span> Hệ thống quản lý nhân sự 
+                <a href="{{url_for('change_password')}}">Đổi mật khẩu</a>
+            </div>
+        </header>
+                <section class="page">{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}
+                    <div class="flash {{category}}">{{message}}</div>{% endfor %}{% endwith %}{% block content %}{% endblock %}</section>
+                    <footer>Hệ thống quản lý nhân sự</footer>
+                </main>{% else %}{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}
+                <div class="flash {{category}} login-flash">{{message}}</div>{% endfor %}{% endwith %}{% block public %}{% endblock %}{% endif %}
+            </body>
+            </html>
