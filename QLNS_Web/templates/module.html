@@ -1,0 +1,73 @@
+{% extends 'base.html' %}{% block title %}{{m.title}} · QLNS{% endblock %}{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">QUẢN TRỊ DỮ LIỆU</span>
+        <h1>{{m.title}}</h1>
+        <p>Thêm mới, cập nhật và tìm kiếm thông tin {{m.title|lower}}.</p>
+    </div>
+    <div class="actions">{% if key=='hopdong' %}<a class="btn primary" href="{{url_for('contracts.soan')}}">✎　Soạn HĐ bằng AI</a>{% endif %}<a class="btn secondary" href="{{url_for('export',key=key)}}">↓　Xuất CSV</a></div>
+</div>
+<div class="panel form-panel">
+    <div class="panel-head">
+        <div>
+            <h2>{{'Cập nhật thông tin' if edit else 'Thêm '+m.title|lower+' mới'}}</h2>
+            <p>Các trường có dấu * là bắt buộc.</p>
+        </div>{% if edit %}
+        <a class="btn secondary" href="{{url_for('module',key=key)}}">Hủy sửa</a>{% endif %}
+    </div>
+    <form method="post" class="data-form">{% if edit %}
+        <input type="hidden" name="id" value="{{request.args.get('edit')}}">{% endif %}
+        <input type="hidden" name="action" value="{{'update' if edit else 'add'}}">
+        <div class="form-grid">{% for col,label,typ,required in m.fields %}
+            <div class="field">
+                <label>{{label}}{% if required %} *{% endif %}
+                </label>{% if typ.startswith('choice:') %}
+                <select name="{{col}}" {% if required %}required{% endif %}>
+                    <option value="">-- Chọn --</option>{% for opt in typ.split(':',1)[1].split('|') %}<option value="{{opt}}" {% if edit and edit[col]|string==opt %}selected{% endif %}>{{opt}}</option>{% endfor %}</select>{% elif typ=='department' or typ=='position' %}<select name="{{col}}" {% if required %}required{% endif %}><option value="">-- Chọn {{label|lower}} --</option>{% for opt in options.get(col,[]) %}<option value="{{opt[0]}}" {% if edit and edit[col]|string==opt[0]|string %}selected{% endif %}>{{opt[1]}}</option>{% endfor %}</select>{% else %}<input name="{{col}}" type="{{typ}}" value="{{edit[col] if edit and edit[col] is not none else ''}}" {% if required %}required{% endif %} {% if typ=='number' %}step="any"{% endif %} placeholder="Nhập {{label|lower}}">{% endif %}
+            </div>{% endfor %}</div><div class="form-actions">
+                <button class="btn primary">{{'Lưu thay đổi' if edit else '＋ Thêm mới'}}</button>
+                <a class="btn secondary" href="{{url_for('module',key=key)}}">Làm mới</a>
+            </div>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Danh sách {{m.title|lower}}</h2>
+                <p>{{rows|length}} bản ghi được hiển thị</p>
+            </div>
+            <form class="search" method="get">
+                <input name="q" value="{{request.args.get('q','')}}" placeholder="Tìm kiếm nhanh...">
+                <button class="btn secondary">Tìm</button>
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for v in row %}
+                        <td>{{v if v is not none else '—'}}</td>
+                        {% endfor %}
+                        <td class="actions">
+                            <a class="action-link" href="{{url_for('module',key=key,edit=row[0])}}">Sửa</a>{% if key=='hopdong' %}<a class="action-link" href="{{url_for('contracts.soan',mahd=row[0])}}">Soạn Word</a>{% endif %}
+                            <form method="post" onsubmit="return confirm('{% if key=='nhanvien' %}Xóa nhân viên sẽ xóa luôn hợp đồng, chấm công, nghỉ phép, lương và tài khoản của người này. Không thể hoàn tác. Tiếp tục?{% else %}Bạn có chắc muốn xóa bản ghi này?{% endif %}')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{row[0]}}">
+                                <button class="action-link danger-link">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{cols|length+1}}" class="empty">Không tìm thấy dữ liệu phù hợp.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

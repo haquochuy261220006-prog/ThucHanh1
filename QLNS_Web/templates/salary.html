@@ -1,0 +1,81 @@
+{% extends 'base.html' %}{% block title %}Tiền lương · QLNS{% endblock %}{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">QUẢN TRỊ</span>
+        <h1>Quản lý tiền lương</h1>
+        <p>Theo dõi bảng lương theo tháng và năm.</p>
+    </div>
+</div>
+<div class="panel">
+    <form method="get" class="filter-form">
+        <div class="field">
+            <label>Tháng</label>
+            <select name="month">{% for i in range(1,13) %}
+                <option value="{{i}}" {% if i==month %}selected{% endif %}>Tháng {{i}}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>Năm</label>
+            <input type="number" name="year" value="{{year}}" min="2000" max="2100"></div>
+            <button class="btn primary">Xem bảng lương</button>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Bảng lương tháng {{month}}/{{year}}</h2>
+                <p>{{rows|length}} nhân viên có dữ liệu lương</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>{% for c in cols %}
+                        <th>{{c}}</th>{% endfor %}<th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>{% for row in rows %}
+                    <tr>{% for v in row %}
+                        <td>{{'{:,.0f}'.format(v) if v is number else (v if v is not none else '—')}}</td>{% endfor %}
+                        <td class="actions"><form method="post" onsubmit="return confirm('Xóa dòng lương này?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{row[0]}}"><input type="hidden" name="month" value="{{month}}"><input type="hidden" name="year" value="{{year}}"><button class="action-link danger-link">Xóa</button></form></td>
+                    </tr>{% else %}
+                    <tr>
+                        <td colspan="{{cols|length+1}}" class="empty">Chưa có bảng lương cho kỳ này. Có thể cần tính lương từ ứng dụng desktop hoặc bổ sung chức năng tính lương.</td>
+                    </tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Cập nhật phụ cấp / khấu trừ</h2>
+                    <p>Chọn nhân viên và nhập các khoản điều chỉnh cho kỳ đang xem.</p>
+                </div>
+            </div>
+            <form method="post" class="data-form">
+                <input type="hidden" name="month" value="{{month}}">
+                <input type="hidden" name="year" value="{{year}}">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Nhân viên</label>
+                        <select name="MaNV" required>
+                            <option value="">-- Chọn nhân viên --</option>{% for p in people %}
+                            <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Phụ cấp (VNĐ)</label>
+                        <input type="number" name="PhuCap" min="0" value="0" required>
+                    </div>
+                    <div class="field">
+                        <label>Khấu trừ (VNĐ)</label>
+                        <input type="number" name="KhauTru" min="0" value="0" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary">Lưu điều chỉnh</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
