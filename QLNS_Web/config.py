@@ -6,8 +6,18 @@ WINDOWS_AUTH = True                     # False -> dùng USER/PASSWORD bên dư�
 USER = "sa"
 PASSWORD = ""
 
-CONG_CHUAN = 26          # số ngày công chuẩn trong tháng
+CONG_CHUAN = 25          # số ngày công chuẩn/tháng -> lương ngày = lương cơ bản / CONG_CHUAN
 GIO_VAO_CHUAN = "08:30"  # vào sau giờ này tính là đi muộn
+
+# ---- Quy tắc tính lương (xem payroll.py) ----
+NGAY_NGHI_TUAN = (6,)     # ngày nghỉ cố định trong tuần: 0=Thứ 2 ... 5=Thứ 7, 6=Chủ nhật
+CHUYEN_CAN_SO_NGAY = 25   # đi làm từ số ngày này trở lên trong tháng thì được thưởng chuyên cần
+CHUYEN_CAN_TY_LE = 0.25   # thưởng chuyên cần = 25% lương cơ bản
+MUON_TRU_NGAY = 0.5       # mỗi lần vào muộn trừ nửa ngày lương
+NGHI_KP_TRU_NGAY = 1      # mỗi ngày nghỉ không phép trừ 1 ngày lương
+GIO_RA_CHUAN = "17:30"    # ra về sau giờ này tính là tăng ca
+GIO_LAM_NGAY = 8          # số giờ của 1 ngày công (để đổi ngày lương -> lương giờ)
+HE_SO_TANG_CA = 1.5       # tiền tăng ca = số giờ x lương giờ x hệ số này
 
 
 def conn_str(database=None):

@@ -15,7 +15,7 @@
     <form method="post" class="attendance-form">
         <div class="field"><label>Nhân viên</label>
             <select name="MaNV" required><option value="">-- Chọn nhân viên --</option>{% for p in people %}
-                <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}</select>
+                <option value="{{p[0]}}" {% if people|length==1 %}selected{% endif %}>{{p[1]}} ({{p[2]}})</option>{% endfor %}</select>
             </div>
                 <button class="btn primary" name="action" value="in">◷　Chấm vào</button>
                 <button class="btn secondary" name="action" value="out">✓　Chấm ra</button>

@@ -23,7 +23,7 @@
                 <label>{{label}}{% if required %} *{% endif %}
                 </label>{% if typ.startswith('choice:') %}
                 <select name="{{col}}" {% if required %}required{% endif %}>
-                    <option value="">-- Chọn --</option>{% for opt in typ.split(':',1)[1].split('|') %}<option value="{{opt}}" {% if edit and edit[col]|string==opt %}selected{% endif %}>{{opt}}</option>{% endfor %}</select>{% elif typ=='department' or typ=='position' %}<select name="{{col}}" {% if required %}required{% endif %}><option value="">-- Chọn {{label|lower}} --</option>{% for opt in options.get(col,[]) %}<option value="{{opt[0]}}" {% if edit and edit[col]|string==opt[0]|string %}selected{% endif %}>{{opt[1]}}</option>{% endfor %}</select>{% else %}<input name="{{col}}" type="{{typ}}" value="{{edit[col] if edit and edit[col] is not none else ''}}" {% if required %}required{% endif %} {% if typ=='number' %}step="any"{% endif %} placeholder="Nhập {{label|lower}}">{% endif %}
+                    <option value="">-- Chọn --</option>{% for opt in typ.split(':',1)[1].split('|') %}<option value="{{opt}}" {% if edit and edit[col]|string==opt %}selected{% endif %}>{{opt}}</option>{% endfor %}</select>{% elif typ in ('department','position','employee') %}<select name="{{col}}" {% if required %}required{% endif %}><option value="">-- Chọn {{label|lower}} --</option>{% for opt in options.get(col,[]) %}<option value="{{opt[0]}}" {% if edit and edit[col]|string==opt[0]|string %}selected{% endif %}>{{opt[1]}}</option>{% endfor %}</select>{% if key=='nhanvien' and typ=='position' %}<button type="button" class="btn secondary" id="btnAddCV" style="align-self:flex-start">＋ Thêm chức vụ</button>{% endif %}{% else %}<input name="{{col}}" type="{{typ}}" value="{{edit[col] if edit and edit[col] is not none else ''}}" {% if required %}required{% endif %} {% if typ=='number' %}step="any"{% endif %} placeholder="Nhập {{label|lower}}">{% endif %}
             </div>{% endfor %}</div><div class="form-actions">
                 <button class="btn primary">{{'Lưu thay đổi' if edit else '＋ Thêm mới'}}</button>
                 <a class="btn secondary" href="{{url_for('module',key=key)}}">Làm mới</a>
@@ -37,19 +37,20 @@
                 <p>{{rows|length}} bản ghi được hiển thị</p>
             </div>
             <form class="search" method="get">
-                <input name="q" value="{{request.args.get('q','')}}" placeholder="Tìm kiếm nhanh...">
+                <input name="q" value="{{request.args.get('q','')}}" placeholder="{{'Nhập mã nhân viên...' if key=='nhanvien' else 'Tìm kiếm nhanh...'}}">
                 <button class="btn secondary">Tìm</button>
             </form>
         </div>
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr>
+                    {% set s0 = 1 if key=='nhanvien' else 0 %}<tr><th>STT</th>{% for c in cols[s0:] %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr>
                 </thead>
                 <tbody>
                     {% for row in rows %}
                     <tr>
-                        {% for v in row %}
+                        <td>{{loop.index}}</td>
+                        {% for v in row[s0:] %}
                         <td>{{v if v is not none else '—'}}</td>
                         {% endfor %}
                         <td class="actions">
@@ -63,11 +64,60 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="{{cols|length+1}}" class="empty">Không tìm thấy dữ liệu phù hợp.</td>
+                        <td colspan="{{cols|length-s0+2}}" class="empty">Không tìm thấy dữ liệu phù hợp.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+{% if key=='nhanvien' %}
+<dialog id="cvDialog" style="border:1px solid var(--line);border-radius:13px;padding:22px;width:min(380px,92vw);box-shadow:0 20px 60px #1b36532e">
+    <h2 style="font-size:14px;margin:0 0 4px">Thêm chức vụ</h2>
+    <p id="cvDeptName" style="font-size:11px;color:var(--muted);margin:0 0 14px"></p>
+    <div class="field"><label for="cvName">Tên chức vụ *</label><input id="cvName" maxlength="100" placeholder="Ví dụ: Kế toán trưởng" autocomplete="off"></div>
+    <p id="cvErr" style="font-size:11px;color:var(--red);margin:10px 0 0;display:none"></p>
+    <div class="form-actions"><button type="button" class="btn primary" id="cvOk">Thêm</button><button type="button" class="btn secondary" id="cvCancel">Hủy</button></div>
+</dialog>
+<script>
+(function(){
+    var CV={{options.get('cv_data',[])|tojson}};
+    var selPB=document.querySelector('select[name="MaPB"]'),selCV=document.querySelector('select[name="MaCV"]');
+    var btn=document.getElementById('btnAddCV'),dlg=document.getElementById('cvDialog'),inp=document.getElementById('cvName'),err=document.getElementById('cvErr');
+    if(!selPB||!selCV||!btn||!dlg)return;
+    function allowed(c,pb){return !pb||c.depts.length===0||c.depts.indexOf(+pb)>-1;}
+    function render(initial){
+        var pb=selPB.value,cur=selCV.value;
+        selCV.innerHTML='';selCV.appendChild(new Option('-- Chọn chức vụ --',''));
+        CV.forEach(function(c){if(allowed(c,pb)||(initial&&String(c.id)===cur))selCV.appendChild(new Option(c.name,c.id));});
+        selCV.value=cur;if(selCV.value!==cur)selCV.value='';
+        btn.disabled=!pb;btn.title=pb?'':'Chọn phòng ban trước';
+    }
+    function showErr(m){err.textContent=m;err.style.display=m?'block':'none';}
+    selPB.addEventListener('change',function(){render(false);});
+    btn.addEventListener('click',function(){
+        if(!selPB.value)return;
+        document.getElementById('cvDeptName').textContent='Phòng ban: '+selPB.options[selPB.selectedIndex].text;
+        inp.value='';showErr('');dlg.showModal();inp.focus();
+    });
+    document.getElementById('cvCancel').addEventListener('click',function(){dlg.close();});
+    function submit(){
+        var name=inp.value.trim();if(!name){showErr('Vui lòng nhập tên chức vụ.');return;}
+        fetch('{{url_for("chucvu_nhanh")}}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({TenCV:name,MaPB:selPB.value})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(!d.ok){showErr(d.error||'Không thêm được chức vụ.');return;}
+            var c=CV.filter(function(x){return x.id===d.id;})[0];
+            if(!c){CV.push({id:d.id,name:d.name,depts:[+selPB.value]});}
+            else if(c.depts.length&&c.depts.indexOf(+selPB.value)<0){c.depts.push(+selPB.value);}
+            render(false);selCV.value=String(d.id);dlg.close();
+        })
+        .catch(function(){showErr('Không kết nối được máy chủ. Hãy tải lại trang và thử lại.');});
+    }
+    document.getElementById('cvOk').addEventListener('click',submit);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
+    render(true);
+})();
+</script>
+{% endif %}
 {% endblock %}

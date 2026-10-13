@@ -20,7 +20,7 @@
                 <label>Nhân viên *</label>
                 <select name="MaNV" required>
                     <option value="">-- Chọn nhân viên --</option>{% for p in people %}
-                    <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}
+                    <option value="{{p[0]}}" {% if people|length==1 %}selected{% endif %}>{{p[1]}} ({{p[2]}})</option>{% endfor %}
                 </select></div><div class="field">
                     <label>Từ ngày *</label>
                     <input type="date" name="TuNgay" required></div>
@@ -55,14 +55,14 @@
 
                                         </td>{% endfor %}{% if admin %}
                                         <td><div class="actions">
-                                            <form method="post">
+                                            {% if row[6]!='Đã duyệt' %}<form method="post">
                                                 <input type="hidden" name="id" value="{{row[0]}}">
                                                 <button class="action-link" name="action" value="approve">Duyệt</button>
-                                            </form>
-                                            <form method="post">
+                                            </form>{% endif %}
+                                            {% if row[6]!='Từ chối' %}<form method="post">
                                                 <input type="hidden" name="id" value="{{row[0]}}">
-                                                <button class="action-link danger-link" name="action" value="reject">Từ chối</button>
-                                            </form>
+                                                <button class="action-link danger-link" name="action" value="reject">Không duyệt</button>
+                                            </form>{% endif %}
                                             <form method="post" onsubmit="return confirm('Xóa đơn nghỉ phép này?')">
                                                 <input type="hidden" name="id" value="{{row[0]}}">
                                                 <button class="action-link danger-link" name="action" value="delete">Xóa</button>

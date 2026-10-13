@@ -9,15 +9,16 @@
         <aside class="sidebar">
             <a class="brand" href="{{url_for('dashboard')}}">
                 <span class="logo">Q</span>
-                <span><b>QLNS</b>
+                <span>
                     <small>QUẢN LÝ NHÂN SỰ</small>
                 </span>
             </a>
             <div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
-            <a class="nav" href="{{url_for('dashboard')}}">▦　Tổng quan</a>{% if admin %}
+            {% if admin %}<a class="nav" href="{{url_for('dashboard')}}">▦　Tổng quan</a>
             <div class="nav-label">QUẢN TRỊ DỮ LIỆU</div>
             <a class="nav" href="{{url_for('module',key='nhanvien')}}">♙　Nhân viên</a>
             <a class="nav" href="{{url_for('module',key='phongban')}}">▤　Phòng ban</a>
+            <a class="nav" href="{{url_for('dieuchuyen')}}">⇄　Điều chuyển phòng ban</a>
             <a class="nav" href="{{url_for('module',key='chucvu')}}">✧　Chức vụ</a>
             <a class="nav" href="{{url_for('module',key='hopdong')}}">▣　Hợp đồng</a>
             <a class="nav" href="{{url_for('contracts.soan')}}">✎　Soạn HĐ bằng AI</a>{% endif %}
@@ -25,6 +26,7 @@
             <a class="nav" href="{{url_for('chamcong')}}">◷　Chấm công</a>
             <a class="nav" href="{{url_for('nghiphep')}}">▧　Nghỉ phép</a>{% if admin %}
             <a class="nav" href="{{url_for('luong')}}">＄　Tiền lương</a>
+            <a class="nav" href="{{url_for('taikhoan')}}">⚿　Tài khoản</a>
             <a class="nav" href="{{url_for('baocao')}}">▥　Báo cáo</a>{% endif %}
             <div class="side-bottom">
                 <div class="avatar">{{session.user.user[:1]|upper}}</div>

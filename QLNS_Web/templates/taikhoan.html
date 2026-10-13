@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}Tài khoản · QLNS{% endblock %}{% block content %}
+<div class="page-heading"><div><span class="eyebrow blue">QUẢN TRỊ</span><h1>Tài khoản đăng nhập</h1><p>Tài khoản nhân viên chỉ được chấm công và gửi đơn nghỉ phép của chính mình.</p></div></div>
+<div class="panel form-panel"><div class="panel-head"><div><h2>Tạo tài khoản nhân viên</h2><p>Mỗi nhân viên có tối đa một tài khoản.</p></div></div>
+<form method="post" class="data-form"><input type="hidden" name="action" value="add"><div class="form-grid">
+<div class="field"><label>Nhân viên *</label><select name="MaNV" required><option value="">-- Chọn nhân viên --</option>{% for p in people %}<option value="{{p[0]}}">{{p[1]}} ({{p[2]}})</option>{% endfor %}</select></div>
+<div class="field"><label>Tên đăng nhập *</label><input name="username" required maxlength="30" autocomplete="off" placeholder="Ví dụ: nv01"></div>
+<div class="field"><label>Mật khẩu *</label><input type="password" name="password" required minlength="6" autocomplete="new-password" placeholder="Ít nhất 6 ký tự"></div>
+</div><div class="form-actions"><button class="btn primary">＋ Tạo tài khoản</button></div></form></div>
+<div class="panel"><div class="panel-head"><div><h2>Danh sách tài khoản</h2><p>{{rows|length}} tài khoản</p></div></div>
+<div class="table-wrap"><table><thead><tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr></thead><tbody>{% for row in rows %}<tr>{% for v in row %}<td>{{v if v is not none else '—'}}</td>{% endfor %}<td class="actions">{% if row[1].startswith('Nhân viên') %}<form method="post" onsubmit="return confirm('Xóa tài khoản {{row[0]}}?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{row[0]}}"><button class="action-link danger-link">Xóa</button></form>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="{{cols|length+1}}" class="empty">Chưa có tài khoản.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}
