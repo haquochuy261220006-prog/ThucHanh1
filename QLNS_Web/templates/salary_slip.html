@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Phiếu lương · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow blue">BẢNG LƯƠNG</span><h1>Phiếu lương tháng {{ row[2] }}/{{ row[3] }}</h1><p>{{ row[0] }} · Mã nhân viên {{ row[1] }}</p></div><button class="btn secondary" type="button" onclick="window.print()">In phiếu lương</button></div>
+<div class="panel">
+    <div class="panel-head"><div><h2>Chi tiết thu nhập và khấu trừ</h2><p>Số liệu của kỳ lương đã được khóa.</p></div></div>
+    <div class="table-wrap"><table><tbody>
+        <tr><th>Ngày công</th><td>{{ row[4] }}</td></tr>
+        <tr><th>Giờ ghi nhận từ sự kiện</th><td>{{ '%.2f'|format(row[15]) if row[15] is not none else 'Chưa có dữ liệu' }}</td></tr>
+        <tr><th>Lương cơ bản</th><td>{{ '{:,.0f}'.format(row[5] or 0) }} đ</td></tr>
+        <tr><th>Thưởng chuyên cần</th><td>{{ '{:,.0f}'.format(row[6] or 0) }} đ</td></tr>
+        <tr><th>Giờ tăng ca</th><td>{{ row[7] or 0 }}</td></tr>
+        <tr><th>Tiền tăng ca</th><td>{{ '{:,.0f}'.format(row[8] or 0) }} đ</td></tr>
+        <tr><th>Thưởng thêm</th><td>{{ '{:,.0f}'.format(row[13] or 0) }} đ</td></tr>
+        <tr><th>Số lần đi muộn</th><td>{{ row[9] or 0 }}</td></tr>
+        <tr><th>Khấu trừ đi muộn</th><td>{{ '{:,.0f}'.format(row[10] or 0) }} đ</td></tr>
+        <tr><th>Ngày nghỉ không phép</th><td>{{ row[11] or 0 }}</td></tr>
+        <tr><th>Khấu trừ nghỉ không phép</th><td>{{ '{:,.0f}'.format(row[12] or 0) }} đ</td></tr>
+        <tr><th><strong>Tổng lương</strong></th><td><strong>{{ '{:,.0f}'.format(row[14] or 0) }} đ</strong></td></tr>
+        {% if calculation_snapshot %}
+        <tr><th>Thu nhập tính thuế trong snapshot</th><td>{{ taxable_income_display }} đ</td></tr>
+        <tr><th>Thuế TNCN</th><td>{{ '{:,.0f}'.format(row[16] or 0) }} đ</td></tr>
+        <tr><th>BHXH người lao động</th><td>{{ '{:,.0f}'.format(row[17] or 0) }} đ</td></tr>
+        <tr><th>BHYT người lao động</th><td>{{ '{:,.0f}'.format(row[18] or 0) }} đ</td></tr>
+        <tr><th>BHTN người lao động</th><td>{{ '{:,.0f}'.format(row[19] or 0) }} đ</td></tr>
+        <tr><th>BHXH doanh nghiệp</th><td>{{ '{:,.0f}'.format(row[20] or 0) }} đ</td></tr>
+        <tr><th>BHYT doanh nghiệp</th><td>{{ '{:,.0f}'.format(row[21] or 0) }} đ</td></tr>
+        <tr><th>BHTN doanh nghiệp</th><td>{{ '{:,.0f}'.format(row[22] or 0) }} đ</td></tr>
+        <tr><th>TNLĐ-BNN doanh nghiệp</th><td>{{ '{:,.0f}'.format(row[23] or 0) }} đ</td></tr>
+        <tr><th><strong>Thực lĩnh</strong></th><td><strong>{{ '{:,.0f}'.format(row[24] or 0) }} đ</strong></td></tr>
+        {% endif %}
+    </tbody></table></div>
+    {% if calculation_snapshot %}<div class="data-form"><p>Áp dụng chính sách mã {{ calculation_snapshot[0] }}; thời điểm tính {{ calculation_snapshot[4] }}. Kết quả được giữ cùng snapshot chính sách và dữ liệu đầu vào.</p></div>
+    {% else %}<div class="data-form"><p>Kỳ này được tính theo công thức cũ; chưa có chính sách thuế/bảo hiểm được áp dụng. Các giá trị 0 trong cột thuế và bảo hiểm không đồng nghĩa đã đối soát pháp lý.</p></div>{% endif %}
+</div>
+<style>@media print{.sidebar,.topbar,footer,.page-heading button{display:none!important}.main{margin:0!important}.page{padding:0!important}.panel{box-shadow:none!important}}</style>
+{% endblock %}

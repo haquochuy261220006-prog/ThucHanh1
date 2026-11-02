@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_export_form.html" import export_form %}
+{% block title %}Tài sản nhân viên · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN CHUẨN</span>
+        <h1>Tài sản nhân viên</h1>
+        <p>Ghi nhận thiết bị theo mã nhân viên, theo dõi bàn giao và thu hồi trong quy trình nghỉ việc.</p>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <div class="panel-head"><div><h2>Cấp tài sản</h2></div></div>
+    <form method="post" class="data-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="assign">
+        <div class="form-grid">
+            <div class="field"><label for="asset-employee">Nhân viên</label><select id="asset-employee" name="MaNV" required><option value="">-- Chọn --</option>{% for person in people %}<option value="{{ person[0] }}">{{ person[1] }} ({{ person[0] }})</option>{% endfor %}</select></div>
+            <div class="field"><label for="asset-name">Tên tài sản</label><input id="asset-name" name="TenTaiSan" maxlength="120" required></div>
+            <div class="field"><label for="asset-code">Mã nội bộ</label><input id="asset-code" name="MaNoiBo" maxlength="60"></div>
+            <div class="field"><label for="asset-serial">Serial</label><input id="asset-serial" name="Serial" maxlength="100"></div>
+            <div class="field"><label for="asset-date">Ngày cấp</label><input id="asset-date" type="date" name="NgayCap" value="{{ today }}" max="{{ today }}" required></div>
+        </div>
+        <div class="form-actions"><button class="btn primary">Ghi nhận cấp tài sản</button></div>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="panel-head">
+        <div><h2>Sổ tài sản</h2><p>Tài sản đã thu hồi vẫn được giữ lại để tra cứu lịch sử.</p></div>
+        {{ export_form('assets') }}
+    </div>
+    <div class="table-wrap"><table>
+        <thead><tr><th>Mã NV</th><th>Nhân viên</th><th>Tài sản</th><th>Mã nội bộ / Serial</th><th>Ngày cấp</th><th>Trạng thái</th><th>Ngày thu hồi</th><th>Tình trạng</th><th></th></tr></thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td>{{ asset[1] }}</td><td>{{ asset[2] }}</td><td>{{ asset[3] }}</td>
+                <td>{{ asset[4] or '—' }}{% if asset[5] %}<br><small>{{ asset[5] }}</small>{% endif %}</td>
+                <td>{{ asset[6] }}</td><td>{{ asset[7] }}</td><td>{{ asset[8] or '—' }}</td><td>{{ asset[9] or '—' }}</td>
+                <td>{% if asset[7] == 'Đang sử dụng' %}<form method="post" class="actions"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="return"><input type="hidden" name="MaTaiSan" value="{{ asset[0] }}"><input type="date" name="NgayThuHoi" aria-label="Ngày thu hồi {{ asset[3] }}" value="{{ today }}" min="{{ asset[6] }}" max="{{ today }}" required><input name="TinhTrangThuHoi" aria-label="Tình trạng thu hồi {{ asset[3] }}" maxlength="200" placeholder="Tình trạng"><button class="action-link">Thu hồi</button></form>{% endif %}</td>
+            </tr>
+            {% else %}<tr><td colspan="9" class="empty">Chưa có tài sản được ghi nhận.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Nhật ký bàn giao</h2><p>Lưu người thực hiện, thời điểm và ghi chú cho từng lần cấp/thu hồi.</p></div></div>
+    <div class="table-wrap"><table>
+        <thead><tr><th>Thời điểm</th><th>Mã tài sản</th><th>Nhân viên</th><th>Tài sản</th><th>Thao tác</th><th>Người thực hiện</th><th>Ghi chú</th></tr></thead>
+        <tbody>{% for event in history %}<tr><td>{{ event[6] }}</td><td>{{ event[0] }}</td><td>{{ event[1] }}</td><td>{{ event[2] }}</td><td>{{ event[3] }}</td><td>{{ event[4] }}</td><td>{{ event[5] or '—' }}</td></tr>{% else %}<tr><td colspan="7" class="empty">Chưa có thao tác.</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

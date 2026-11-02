@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Phiếu lương của tôi · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow blue">BẢNG LƯƠNG</span><h1>Phiếu lương của tôi</h1><p>Chỉ các kỳ đã khóa mới xuất hiện.</p></div></div>
+<div class="panel"><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Tháng</th><th>Thao tác</th></tr></thead><tbody>
+{% for year, month in periods %}
+<tr><td>{{ year }}</td><td>{{ month }}</td><td><a class="action-link" href="{{ url_for('salary_slip', manv=manv, year=year, month=month) }}">Xem / in phiếu lương</a></td></tr>
+{% else %}
+<tr><td colspan="3" class="empty">Chưa có kỳ lương đã khóa cho tài khoản này.</td></tr>
+{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

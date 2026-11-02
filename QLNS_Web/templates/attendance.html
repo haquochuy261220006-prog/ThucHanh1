@@ -1,37 +1,185 @@
-{% extends 'base.html' %}{% block title %}Chấm công · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}
+{% from '_export_form.html' import export_form %}
+
+{% block title %}Chấm công · QLNS{% endblock %}
+
+{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">NGHIỆP VỤ</span>
-        <h1>Chấm công</h1><p>Ghi nhận giờ vào, giờ ra và trạng thái làm việc trong ngày.</p>
+        <h1>Chấm công</h1>
+            <p>Ghi nhận từng lượt vào/ra; hệ thống giữ dòng tổng hợp ngày để các module cũ tiếp tục hoạt động.</p>
     </div>
-    <span class="date-chip">Hôm nay · {{today}}</span>
+    <span class="date-chip">Ngày được chọn · {{ selected_day }}</span>
 </div>
-    <div class="panel"><div class="panel-head">
+
+{% if admin %}
+<div class="panel">
+    <div class="panel-head">
         <div>
-        <h2>Ghi nhận chấm công</h2>
-        <p>Chọn nhân viên để ghi giờ vào hoặc giờ ra.</p>
+            <h2>Ghi nhận chấm công</h2>
+            <p>Quản trị viên chọn nhân viên để ghi nhận giờ vào hoặc giờ ra.</p>
+        </div>
+    </div>
+    <form method="post" class="attendance-form">
+        <div class="field">
+            <label for="attendance-employee">Nhân viên</label>
+            <select id="attendance-employee" name="MaNV" required>
+                <option value="">-- Chọn nhân viên --</option>
+                {% for p in people %}
+                <option value="{{ p[0] }}">{{ p[1] }} ({{ p[2] }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn primary" name="action" value="in">◷ Chấm vào</button>
+        <button class="btn secondary" name="action" value="out">✓ Chấm ra</button>
+    </form>
+</div>
+{% else %}
+<div class="panel" id="face-attendance" data-csrf="{{ face_csrf }}" data-consent-version="{{ face_consent_version }}"
+     data-profile-photo="{{ url_for('nhanvien_anh', manv=session.user.get('manv') or 0) }}">
+    <div class="panel-head">
+        <div>
+            <h2>Chấm công xác minh khuôn mặt trực tiếp</h2>
+            <p>Ảnh hồ sơ chỉ dùng đăng ký mẫu. Khi chấm công, trình duyệt yêu cầu camera và kiểm tra chuyển động trực tiếp.</p>
+        </div>
+    </div>
+    <div class="face-attendance-content">
+        <p>Ảnh chụp/tải lên không được chấp nhận để chấm công. Thiết bị xử lý video trực tiếp để kiểm tra liveness, chống giả mạo và thử thách quay đầu/chớp mắt; nếu không đạt, hãy dùng chấm công dự phòng.</p>
+        {% if has_face and not has_current_face %}<p class="flash warning">Thông báo xử lý dữ liệu đã được cập nhật. Hãy đọc phần đồng ý và đăng ký lại mẫu khuôn mặt trước khi tiếp tục.</p>{% endif %}
+        {% if has_photo %}
+        <div class="face-profile-photo">
+            <img id="face-profile-photo"
+                 src="{{ url_for('nhanvien_anh', manv=session.user.get('manv') or 0) }}"
+                 alt="Ảnh hồ sơ nhân viên">
+            <div>
+                <strong>Ảnh hồ sơ nhân viên</strong>
+                <p>Đăng ký mẫu khuôn mặt từ ảnh này trước khi chấm công lần đầu.</p>
+            </div>
+        </div>
+        {% else %}
+        <p>Hồ sơ chưa có ảnh. Vui lòng liên hệ quản trị viên tải ảnh vào hồ sơ nhân viên trước khi sử dụng.</p>
+        {% endif %}
+        <div class="form-grid">
+            <div class="field">
+                <label for="face-action">Loại chấm công</label>
+                <select id="face-action">
+                    <option value="in">Chấm vào</option>
+                    <option value="out">Chấm ra</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="face-live-video">Camera trực tiếp</label>
+                <video id="face-live-video" autoplay muted playsinline hidden
+                       style="width:min(100%,420px);border-radius:12px;background:#111"></video>
+                <small>Video không được tải lên máy chủ; chỉ vector khuôn mặt, điểm liveness và kết quả được gửi để ghi nhận.</small>
+            </div>
+        </div>
+        <div class="field face-consent">
+            <label for="face-consent">
+                <input type="checkbox" id="face-consent">
+                Tôi đồng ý dùng camera trực tiếp để kiểm tra liveness/chuyển động và lưu vector khuôn mặt đã mã hóa chỉ để đối chiếu chấm công. Dữ liệu được lưu tối đa {{ face_retention_days }} ngày; tôi có thể rút lại đồng ý và yêu cầu xóa mẫu bất cứ lúc nào.
+            </label>
+        </div>
+        <div class="form-actions">
+            {% if has_photo %}
+            <button class="btn secondary" type="button" id="face-enroll">Đăng ký từ ảnh hồ sơ</button>
+            {% endif %}
+            <button class="btn primary" type="button" id="face-scan"
+                    {% if not has_photo or not has_current_face %}disabled{% endif %}>Xác minh người thật và chấm công</button>
+            {% if has_face %}
+            <button class="btn secondary" type="button" id="face-delete">Xóa dữ liệu khuôn mặt</button>
+            {% endif %}
+        </div>
+        <p id="face-status" role="status" aria-live="polite" style="margin-top:12px"></p>
     </div>
 </div>
-    <form method="post" class="attendance-form">
-        <div class="field"><label>Nhân viên</label>
-            <select name="MaNV" required><option value="">-- Chọn nhân viên --</option>{% for p in people %}
-                <option value="{{p[0]}}" {% if people|length==1 %}selected{% endif %}>{{p[1]}} ({{p[2]}})</option>{% endfor %}</select>
-            </div>
-                <button class="btn primary" name="action" value="in">◷　Chấm vào</button>
-                <button class="btn secondary" name="action" value="out">✓　Chấm ra</button>
-            </form>
-            </div>
-                <div class="panel"><div class="panel-head"><div><h2>Bảng chấm công hôm nay</h2>
-                    <p>{{rows|length}} bản ghi</p></div></div><div class="table-wrap">
-                        <table>
-                        <thead>
-                            <tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}{% if admin %}<th>Thao tác</th>{% endif %}</tr>
-                        </thead>
-                        <tbody>{% for row in rows %}<tr>{% for v in row %}
-                            <td>{{v if v is not none else '—'}}</td>{% endfor %}{% if admin %}<td class="actions"><form method="post" onsubmit="return confirm('Xóa bản ghi chấm công này?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{row[0]}}"><button class="action-link danger-link">Xóa</button></form></td>{% endif %}</tr>{% else %}<tr>
-                                <td colspan="{{cols|length+(1 if admin else 0)}}" class="empty">Chưa có dữ liệu chấm công hôm nay.</td>
-                            </tr>{% endfor %}
-                        </tbody>
-                        </table>
-                    </div>
-                </div>{% endblock %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Chấm công dự phòng</h2><p>Dùng khi không thể quét; ghi rõ lý do để quản trị viên đối soát.</p></div></div>
+    <form method="post" class="attendance-form"><input type="hidden" name="action" value="in"><div class="field"><label>Lý do dùng dự phòng</label><input name="LyDo" minlength="5" maxlength="500" required></div><button class="btn primary">Chấm vào thủ công</button></form>
+    <form method="post" class="attendance-form"><input type="hidden" name="action" value="out"><div class="field"><label>Lý do dùng dự phòng</label><input name="LyDo" minlength="5" maxlength="500" required></div><button class="btn secondary">Chấm ra thủ công</button></form>
+</div>
+<div class="panel">
+    <div class="panel-head"><div><h2>Khiếu nại / đề nghị sửa giờ công</h2><p>Quản trị viên xem xét, cập nhật giờ và lưu nhật ký.</p></div></div>
+    <form method="post" class="data-form"><input type="hidden" name="action" value="complaint"><div class="form-grid"><div class="field"><label>Ngày cần điều chỉnh</label><input type="date" name="Ngay" value="{{ selected_day.isoformat() }}" required></div><div class="field"><label>Loại ngoại lệ</label><select name="LoaiNgoaiLe" required><option>Quên chấm vào/ra</option><option>Máy chấm công lỗi</option><option>Sai giờ ghi nhận</option><option>Khác</option></select></div><div class="field"><label>Mô tả và giờ cần đề nghị</label><input name="NoiDung" maxlength="950" required placeholder="Ví dụ: quên chấm ra lúc 17:05"></div></div><div class="form-actions"><button class="btn secondary">Gửi ngoại lệ để duyệt</button></div></form>
+    <div class="table-wrap"><table><thead><tr><th>Ngày</th><th>Nội dung</th><th>Trạng thái</th><th>Phản hồi</th></tr></thead><tbody>{% for item in my_complaints %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="4" class="empty">Chưa có khiếu nại.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endif %}
+{% if admin and face_logs %}
+<div class="panel"><div class="panel-head"><div><h2>Nhật ký chấm công gần đây</h2><p>Nguồn, kết quả đối chiếu, điểm tương đồng và thao tác quản trị; không hiển thị vector.</p></div></div><div class="table-wrap"><table><thead><tr><th>Nhân viên</th><th>Nguồn</th><th>Thao tác</th><th>Kết quả</th><th>Điểm</th><th>Thời điểm UTC</th><th>Người thực hiện</th><th>Chi tiết</th></tr></thead><tbody>{% for item in face_logs %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div>
+{% endif %}
+{% if attendance_events %}<div class="panel"><div class="panel-head"><div><h2>{{ 'Sự kiện chấm công' if admin else 'Lịch sử lượt vào/ra của tôi' }}</h2><p>Nhật ký theo ngày công; bản tổng hợp ngày cũ vẫn được giữ để tương thích payroll.</p></div></div><div class="table-wrap"><table><thead><tr><th>Nhân viên</th><th>Ngày công</th><th>Thời điểm ghi nhận</th><th>Loại</th><th>Nguồn</th><th>Kết quả</th><th>Điểm nhận diện</th><th>Người thực hiện</th><th>Chi tiết</th></tr></thead><tbody>{% for item in attendance_events %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div>{% endif %}
+{% if admin and complaints %}
+<div class="panel"><div class="panel-head"><div><h2>Khiếu nại chấm công đang chờ</h2><p>Nhập giờ đã xác minh rồi xử lý khiếu nại.</p></div></div>
+{% for item in complaints %}
+<form method="post" class="data-form"><input type="hidden" name="action" value="resolve_complaint"><input type="hidden" name="MaKN" value="{{ item[0] }}"><p><strong>{{ item[2] }}</strong> · {{ item[3] }} · {{ item[4] }}</p><div class="form-grid"><div class="field"><label>Giờ vào HH:MM</label><input name="GioVao" pattern="(?:[01]?\d|2[0-3]):[0-5]\d"></div><div class="field"><label>Giờ ra HH:MM</label><input name="GioRa" pattern="(?:[01]?\d|2[0-3]):[0-5]\d"></div><div class="field"><label>Trạng thái</label><select name="TrangThai"><option>Đi làm</option><option>Đi muộn</option><option>Nghỉ phép</option><option>Nghỉ không phép</option></select></div><div class="field"><label>Phản hồi xử lý</label><input name="PhanHoi" maxlength="1000" required></div></div><div class="form-actions"><button class="btn primary">Cập nhật và đóng khiếu nại</button></div></form>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="panel">
+    <form method="get" class="filter-form">
+        <div class="field">
+            <label for="attendance-date">Ngày cần xem</label>
+            <input id="attendance-date" type="date" name="date"
+                   value="{{ selected_day.isoformat() }}" required>
+        </div>
+        <button class="btn secondary">Xem ngày</button>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>{{ 'Bảng chấm công ngày ' ~ selected_day if admin else 'Chấm công của tôi ngày ' ~ selected_day }}</h2>
+            <p>{{ rows|length }} bản ghi</p>
+        </div>
+        {{ export_form("attendance", {"date": selected_day.isoformat()}) }}
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {% for c in cols %}<th>{{ c }}</th>{% endfor %}
+                    {% if admin %}<th>Thao tác</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for v in row %}<td>{{ v if v is not none else '—' }}</td>{% endfor %}
+                    {% if admin %}
+                    <td class="actions">
+                        <form method="post" class="attendance-status-form">
+                            <input type="hidden" name="action" value="update_status">
+                            <input type="hidden" name="date" value="{{ selected_day.isoformat() }}">
+                            <input type="hidden" name="id" value="{{ row[0] }}">
+                            <select name="TrangThai" aria-label="Trạng thái chấm công của {{ row[1] }}">
+                                {% for status in ['Đi làm', 'Đi muộn', 'Nghỉ phép', 'Nghỉ không phép'] %}
+                                <option value="{{ status }}" {% if row[5] == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="action-link">Lưu</button>
+                        </form>
+                        <form method="post" onsubmit="return confirm('Xóa bản ghi chấm công này?')">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="date" value="{{ selected_day.isoformat() }}">
+                            <input type="hidden" name="id" value="{{ row[0] }}">
+                            <button class="action-link danger-link">Xóa</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr><td colspan="{{ cols|length + (1 if admin else 0) }}" class="empty">Chưa có dữ liệu chấm công trong ngày được chọn.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if not admin %}
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js" defer></script>
+<script src="{{ url_for('static', filename='face-attendance.js') }}" defer></script>
+{% endif %}
+{% endblock %}

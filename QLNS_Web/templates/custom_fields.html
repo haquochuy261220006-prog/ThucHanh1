@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Trường hồ sơ tùy chỉnh · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow blue">CẤU HÌNH HỒ SƠ</span><h1>Trường tùy chỉnh</h1><p>Định nghĩa dữ liệu theo doanh nghiệp; hệ thống chỉ nhận kiểu dữ liệu cho phép và không tạo cột hoặc SQL động.</p></div></div>
+<div class="panel form-panel"><div class="panel-head"><div><h2>Thêm trường hồ sơ</h2><p>Trường đã có dữ liệu chỉ có thể ngừng sử dụng để bảo toàn hồ sơ.</p></div></div>
+    <form method="post" class="data-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="add">
+        <div class="form-grid"><div class="field"><label for="TenTruong">Tên trường</label><input id="TenTruong" name="TenTruong" maxlength="80" required></div>
+            <div class="field"><label for="KieuDuLieu">Kiểu dữ liệu</label><select id="KieuDuLieu" name="KieuDuLieu" required><option value="text">Văn bản</option><option value="number">Số</option><option value="date">Ngày</option><option value="boolean">Có/Không</option><option value="email">Email</option></select></div>
+            <div class="field"><label><input type="checkbox" name="BatBuoc"> Bắt buộc nhập</label></div><div class="field"><label><input type="checkbox" name="NhayCam"> Dữ liệu nhạy cảm (chỉ quản trị viên xem/sửa)</label></div></div>
+        <div class="form-actions"><button class="btn primary">Tạo trường</button></div>
+    </form>
+</div>
+<div class="panel"><div class="table-wrap"><table><thead><tr><th>Tên trường</th><th>Kiểu</th><th>Bắt buộc</th><th>Nhạy cảm</th><th>Trạng thái</th><th>Số hồ sơ có dữ liệu</th><th></th></tr></thead><tbody>
+    {% for field in fields %}<tr><td>{{ field[1] }}</td><td>{{ field[2] }}</td><td>{{ 'Có' if field[3] else 'Không' }}</td><td>{{ 'Có' if field[4] else 'Không' }}</td><td>{{ 'Đang dùng' if field[5] else 'Đã ngừng' }}</td><td>{{ field[8] }}</td><td class="actions"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="MaTruong" value="{{ field[0] }}"><input type="hidden" name="action" value="toggle"><button class="action-link">{{ 'Ngừng dùng' if field[5] else 'Kích hoạt' }}</button></form>{% if not field[8] %}<form method="post" onsubmit="return confirm('Xóa trường này?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="MaTruong" value="{{ field[0] }}"><input type="hidden" name="action" value="delete"><button class="action-link danger-link">Xóa</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="7" class="empty">Chưa định nghĩa trường nào.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

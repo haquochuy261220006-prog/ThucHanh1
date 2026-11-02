@@ -1,4 +1,5 @@
 import pyodbc
+
 from config import conn_str
 
 
@@ -26,6 +27,19 @@ def query(sql, params=()):
 def execute(sql, params=()):
     """Chạy INSERT/UPDATE/DELETE, trả về số dòng ảnh hưởng."""
     return _run(sql, params, False)
+
+
+def execute_batches(batches):
+    """Chạy nhiều nhóm lệnh trong cùng một kết nối và transaction."""
+    conn = pyodbc.connect(conn_str())
+    try:
+        cur = conn.cursor()
+        for sql, params in batches:
+            if params:
+                cur.executemany(sql, params)
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def scalar(sql, params=()):

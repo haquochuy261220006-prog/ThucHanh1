@@ -1,77 +1,123 @@
-{% extends 'base.html' %}{% block title %}Nghỉ phép · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}
+{% from '_export_form.html' import export_form %}
+{% block title %}Nghỉ phép · QLNS{% endblock %}
+
+{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">NGHIỆP VỤ</span>
         <h1>Quản lý nghỉ phép</h1>
-        <p>Gửi đơn nghỉ phép và theo dõi trạng thái xét duyệt.</p>
+        <p>Gửi, xét duyệt và theo dõi quỹ phép theo lịch làm việc từng nhân viên.</p>
     </div>
 </div>
+
+{% if not admin %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Quỹ phép năm {{ current_year }}</h2><p>Ngày phép đã duyệt được trừ khỏi quỹ; đơn đang chờ được tạm giữ.</p></div></div>
+    <div class="stats">
+        <div class="stat-card"><span>Được cấp</span><strong>{{ balance[0] }}</strong></div>
+        <div class="stat-card"><span>Chuyển từ năm trước</span><strong>{{ balance[1] }}</strong></div>
+        <div class="stat-card"><span>Đã dùng/giữ</span><strong>{{ balance[2] }}</strong></div>
+        <div class="stat-card"><span>Giữ cho đơn chờ</span><strong>{{ balance[3] }}</strong></div>
+        <div class="stat-card"><span>Còn khả dụng</span><strong>{{ [0, balance[0] + balance[1] - balance[2] - balance[3]]|max }}</strong></div>
+    </div>
+</div>
+{% endif %}
+
 <div class="panel">
     <div class="panel-head">
         <div>
-            <h2>Gửi đơn nghỉ phép</h2>
-            <p>Vui lòng điền đầy đủ thông tin ngày nghỉ.</p>
+            <h2>Gửi đơn nghỉ</h2>
+            <p>Ngày nghỉ được tính theo lịch tuần của nhân viên. Mỗi đơn thuộc một năm dương lịch.</p>
         </div>
     </div>
     <form method="post" class="data-form">
         <input type="hidden" name="action" value="submit">
         <div class="form-grid">
+            {% if admin %}
             <div class="field">
-                <label>Nhân viên *</label>
-                <select name="MaNV" required>
-                    <option value="">-- Chọn nhân viên --</option>{% for p in people %}
-                    <option value="{{p[0]}}" {% if people|length==1 %}selected{% endif %}>{{p[1]}} ({{p[2]}})</option>{% endfor %}
-                </select></div><div class="field">
-                    <label>Từ ngày *</label>
-                    <input type="date" name="TuNgay" required></div>
-                    <div class="field">
-                        <label>Đến ngày *</label>
-                        <input type="date" name="DenNgay" required></div>
-                        <div class="field">
-                            <label>Lý do</label>
-                            <input name="LyDo" placeholder="Nhập lý do nghỉ phép"></div>
-                        </div><div class="form-actions">
-                            <button class="btn primary">Gửi đơn nghỉ phép</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="panel">
-                    <div class="panel-head">
-                        <div>
-                            <h2>Danh sách đơn nghỉ</h2>
-                            <p>{{rows|length}} đơn</p>
-                        </div>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>{% for c in cols %}
-                                    <th>{{c}}</th>{% endfor %}{% if admin %}
-                                    <th>Thao tác</th>{% endif %}</tr>
-                                </thead>
-                                <tbody>{% for row in rows %}
-                                    <tr>{% for v in row %}
-                                        <td>{{v if v is not none else '—'}}
+                <label for="leave-employee">Nhân viên *</label>
+                <select id="leave-employee" name="MaNV" required>
+                    <option value="">-- Chọn nhân viên --</option>
+                    {% for p in people %}<option value="{{ p[0] }}">{{ p[1] }} ({{ p[2] }})</option>{% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="field">
+                <label for="leave-type">Loại nghỉ *</label>
+                <select id="leave-type" name="LoaiNghi" required>
+                    {% for leave_type in leave_types %}<option value="{{ leave_type }}">{{ leave_type }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field"><label for="leave-start">Từ ngày *</label><input id="leave-start" type="date" name="TuNgay" required></div>
+            <div class="field"><label for="leave-end">Đến ngày *</label><input id="leave-end" type="date" name="DenNgay" required></div>
+            <div class="field"><label for="leave-reason">Lý do</label><input id="leave-reason" name="LyDo" maxlength="255" placeholder="Nhập lý do nghỉ"></div>
+        </div>
+        <div class="form-actions"><button class="btn primary">Gửi đơn nghỉ</button></div>
+    </form>
+</div>
 
-                                        </td>{% endfor %}{% if admin %}
-                                        <td><div class="actions">
-                                            {% if row[6]!='Đã duyệt' %}<form method="post">
-                                                <input type="hidden" name="id" value="{{row[0]}}">
-                                                <button class="action-link" name="action" value="approve">Duyệt</button>
-                                            </form>{% endif %}
-                                            {% if row[6]!='Từ chối' %}<form method="post">
-                                                <input type="hidden" name="id" value="{{row[0]}}">
-                                                <button class="action-link danger-link" name="action" value="reject">Không duyệt</button>
-                                            </form>{% endif %}
-                                            <form method="post" onsubmit="return confirm('Xóa đơn nghỉ phép này?')">
-                                                <input type="hidden" name="id" value="{{row[0]}}">
-                                                <button class="action-link danger-link" name="action" value="delete">Xóa</button>
-                                            </form>
-                                        </div>
-                                    </td>{% endif %}</tr>{% else %}
-                                    <tr>
-                                        <td colspan="{{cols|length+(1 if admin else 0)}}" class="empty">Chưa có đơn nghỉ phép.</td>
-                                    </tr>{% endfor %}</tbody>
-                                </table>
-                            </div>
-                        </div>{% endblock %}
+{% if not admin and notices %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Thông báo nghỉ phép</h2><p>Thông báo duyệt, từ chối, thay đổi và hủy đơn.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Nội dung</th><th>Thời điểm</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+    {% for n in notices %}<tr><td>{{ n[2] }}</td><td>{{ n[3] }}</td><td>{{ 'Đã đọc' if n[4] else 'Mới' }}</td><td>{% if not n[4] %}<form method="post"><input type="hidden" name="action" value="read_notice"><input type="hidden" name="id" value="{{ n[0] }}"><button class="action-link">Đánh dấu đã đọc</button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+{% endif %}
+
+{% if manager_rows %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Đơn chờ quản lý trực tiếp</h2><p>Chỉ quản lý được gán cho nhân viên mới có thể xử lý bước này.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Nhân viên</th><th>Thời gian</th><th>Số ngày</th><th>Loại</th><th>Lý do</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+    {% for row in manager_rows %}
+    <tr><td>{{ row[1] }}</td><td>{{ row[2] }} – {{ row[3] }}</td><td>{{ row[4] }}</td><td>{{ row[5] }}</td><td>{{ row[6] or '—' }}</td><td>{{ row[7] }}</td><td><div class="actions">
+        <form method="post"><input type="hidden" name="id" value="{{ row[0] }}"><button class="action-link" name="action" value="approve">{{ 'Duyệt hủy' if 'hủy' in row[7] else ('Duyệt thay đổi' if 'thay đổi' in row[7] else 'Duyệt') }}</button></form>
+        <form method="post"><input type="hidden" name="id" value="{{ row[0] }}"><input name="PhanHoi" maxlength="1000" placeholder="Lý do từ chối"><button class="action-link danger-link" name="action" value="reject">Từ chối</button></form>
+    </div></td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+{% endif %}
+
+{% if admin %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Cấu hình quy trình duyệt</h2><p>Bước nhân sự do quản trị viên xử lý; bước quản lý giao cho tài khoản nhân viên được gán.</p></div></div>
+    <form method="post" class="data-form">
+        <input type="hidden" name="action" value="policy">
+        <label><input type="checkbox" name="YeuCauQuanLy" {% if policy[0] %}checked{% endif %}> Yêu cầu quản lý trực tiếp duyệt trước</label>
+        <label><input type="checkbox" name="YeuCauNhanSu" {% if policy[1] %}checked{% endif %}> Yêu cầu nhân sự duyệt</label>
+        <div class="form-actions"><button class="btn secondary">Lưu quy trình</button></div>
+    </form>
+</div>
+<div class="panel">
+    <div class="panel-head"><div><h2>Thiết lập nhân viên</h2><p>Quản lý, lịch tuần và quỹ phép năm {{ current_year }}. Nếu chưa đặt lịch riêng, hệ thống dùng lịch nghỉ mặc định.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Nhân viên</th><th>Quản lý trực tiếp</th><th>Lịch làm việc (Thứ 2–Chủ nhật)</th><th>Quỹ phép {{ current_year }}</th></tr></thead><tbody>
+    {% for p in people %}
+    {% set quota = quotas.get(p[0], (0,0,0,0)) %}
+    {% set schedule = schedules.get(p[0], default_work_days) %}
+    <tr><td>{{ p[1] }} ({{ p[2] }})</td>
+    <td><form method="post"><input type="hidden" name="action" value="manager"><input type="hidden" name="MaNV" value="{{ p[0] }}"><select name="MaQuanLy" required><option value="">-- Chọn --</option>{% for m in available_managers %}{% if m[0] != p[0] %}<option value="{{ m[0] }}" {% if manager_map.get(p[0]) == m[0] %}selected{% endif %}>{{ m[1] }}</option>{% endif %}{% endfor %}</select><button class="action-link">Lưu</button></form></td>
+    <td><form method="post"><input type="hidden" name="action" value="schedule"><input type="hidden" name="MaNV" value="{{ p[0] }}">{% for day, label in leave_days %}<label style="display:inline-block;margin:4px 8px 4px 0"><input type="checkbox" name="Thu" value="{{ day }}" {% if day in schedule %}checked{% endif %}>{{ label }}</label>{% endfor %}<button class="action-link">Lưu lịch</button></form></td>
+    <td><form method="post"><input type="hidden" name="action" value="quota"><input type="hidden" name="MaNV" value="{{ p[0] }}"><input type="hidden" name="Nam" value="{{ current_year }}"><label>Cấp <input type="number" min="0" max="366" step="1" name="SoNgayCap" value="{{ quota[0] }}" required style="width:80px"></label><label>Chuyển <input type="number" min="0" max="366" step="1" name="SoNgayChuyen" value="{{ quota[1] }}" required style="width:80px"></label><small>Đã dùng/giữ {{ quota[2] }} · giữ cho đơn chờ {{ quota[3] }} · còn {{ [0, quota[0] + quota[1] - quota[2] - quota[3]]|max }}</small><button class="action-link">Lưu quỹ</button></form></td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+{% endif %}
+
+<div class="panel">
+    <div class="panel-head"><div><h2>{{ 'Tất cả đơn nghỉ' if admin else 'Đơn nghỉ của tôi' }}</h2><p>{{ rows|length }} đơn</p></div>{{ export_form("leave") }}</div>
+    <div class="table-wrap"><table><thead><tr><th>Mã đơn</th>{% if admin %}<th>Nhân viên</th>{% endif %}<th>Từ ngày</th><th>Đến ngày</th><th>Số ngày</th><th>Loại nghỉ</th><th>Lý do</th><th>Trạng thái</th><th>Phản hồi</th><th>Thao tác</th></tr></thead><tbody>
+    {% for row in rows %}
+    <tr><td>{{ row[0] }}</td>{% if admin %}<td>{{ row[1] }}</td>{% endif %}<td>{{ row[2] }}</td><td>{{ row[3] }}</td><td>{{ row[4] }}</td><td>{{ row[5] }}</td><td>{{ row[6] or '—' }}</td><td>{{ row[7] }}</td><td>{{ row[8] or '—' }}</td><td>
+        {% if admin %}
+            {% if row[7].startswith('Chờ nhân sự') %}<div class="actions"><form method="post"><input type="hidden" name="id" value="{{ row[0] }}"><button class="action-link" name="action" value="approve">{{ 'Duyệt hủy' if 'hủy' in row[7] else ('Duyệt thay đổi' if 'thay đổi' in row[7] else 'Duyệt') }}</button></form><form method="post"><input type="hidden" name="id" value="{{ row[0] }}"><input name="PhanHoi" maxlength="1000" placeholder="Lý do từ chối"><button class="action-link danger-link" name="action" value="reject">Từ chối</button></form></div>{% endif %}
+        {% elif row[7] in ('Chờ quản lý','Chờ nhân sự','Chờ quản lý thay đổi','Chờ nhân sự thay đổi','Chờ quản lý hủy','Chờ nhân sự hủy','Đã duyệt') %}
+            <div class="actions"><form method="post"><input type="hidden" name="id" value="{{ row[0] }}"><button class="action-link danger-link" name="action" value="withdraw">{{ 'Yêu cầu hủy' if row[7] == 'Đã duyệt' or 'hủy' in row[7] else 'Rút đơn' }}</button></form>
+            {% if row[7] in ('Chờ quản lý','Chờ nhân sự','Đã duyệt') %}<details><summary class="action-link">Thay đổi ngày</summary><form method="post" class="data-form"><input type="hidden" name="action" value="change"><input type="hidden" name="id" value="{{ row[0] }}"><label>Từ <input type="date" name="TuNgay" value="{{ row[2] }}" required></label><label>Đến <input type="date" name="DenNgay" value="{{ row[3] }}" required></label><select name="LoaiNghi">{% for leave_type in leave_types %}<option {% if leave_type == row[5] %}selected{% endif %}>{{ leave_type }}</option>{% endfor %}</select><input name="LyDo" value="{{ row[6] or '' }}" maxlength="255"><button class="action-link">Gửi thay đổi</button></form></details>{% endif %}</div>
+        {% endif %}
+    </td></tr>
+    {% else %}<tr><td colspan="{{ 10 if admin else 9 }}" class="empty">Chưa có đơn nghỉ phép.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Quét giấy tờ nhân viên · QLNS{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow blue">QUẢN TRỊ</span>
+            <h1>Quét giấy tờ nhân viên</h1>
+            <p>Tài liệu được OCR trên máy chủ. Kiểm tra kết quả nhận dạng rồi mới chuyển sang hồ sơ nhân viên.</p>
+        </div>
+    </div>
+    <div class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Tải tài liệu lên</h2>
+                <p>Nhận dạng CCCD hoặc CV / sơ yếu lý lịch. Hỗ trợ ảnh PNG, JPG, TIFF, BMP và PDF tối đa 5 trang, 10 MB.</p>
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="data-form">
+            <input type="hidden" name="action" value="scan">
+            <div class="field">
+                <label>Ảnh hoặc PDF</label><input type="file"
+       name="document"
+       accept="image/png,image/jpeg,image/tiff,image/bmp,application/pdf"
+       required>
+            </div>
+            <div class="form-actions">
+                <button class="btn primary" type="submit">Quét và nhận dạng</button>
+            </div>
+        </form>
+    </div>
+    {% if result %}
+        <div class="panel form-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Kết quả nhận dạng: {{ result.document_type }}</h2>
+                    <p>Chỉnh sửa các trường nếu OCR đọc chưa chính xác. Các thông tin còn thiếu có thể bổ sung ở form hồ sơ tiếp theo.</p>
+                </div>
+            </div>
+            <form method="post" class="data-form">
+                <input type="hidden" name="action" value="continue">
+                <input type="hidden" name="document_type" value="{{ result.document_type }}">
+                <input type="hidden" name="preview" value="{{ result.preview }}">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Họ tên</label><input name="HoTen"
+       value="{{ result.fields.HoTen }}"
+       required>
+                    </div>
+                    <div class="field">
+                        <label>Ngày sinh</label><input type="date"
+       name="NgaySinh"
+       value="{{ result.fields.NgaySinh }}">
+                    </div>
+                    <div class="field"><label>Giới tính</label><select name="GioiTinh"><option value="">-- Chọn --</option>{% for value in ['Nam','Nữ','Khác'] %}<option value="{{ value }}"
+        {% if result.fields.GioiTinh==value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></div>
+                    <div class="field">
+                        <label>Số điện thoại</label><input name="SDT"
+       value="{{ result.fields.SDT }}">
+                    </div>
+                    <div class="field">
+                        <label>Email</label><input type="email"
+       name="Email"
+       value="{{ result.fields.Email }}">
+                    </div>
+                    <div class="field">
+                        <label>CCCD</label><input name="CCCD" value="{{ result.fields.CCCD }}">
+                    </div>
+                    <div class="field wide">
+                        <label>Địa chỉ</label><input name="DiaChi"
+       value="{{ result.fields.DiaChi }}">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn primary" type="submit">Chuyển sang hồ sơ nhân viên</button><a class="btn secondary" href="{{ url_for('scan_nhanvien') }}">Quét tài liệu khác</a>
+                </div>
+            </form>
+            <details style="margin-top:16px">
+                <summary>Văn bản OCR thô để đối chiếu</summary>
+                <pre style="white-space:pre-wrap;
+                            max-height:260px;
+                            overflow:auto">{{result.preview}}</pre>
+            </details>
+        </div>
+    {% endif %}
+{% endblock %}

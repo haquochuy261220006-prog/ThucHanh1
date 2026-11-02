@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Nhật ký hồ sơ · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span>
+        <h1>Nhật ký thay đổi hồ sơ</h1>
+        <p>{{ employee[1] }} · Mã {{ employee[2] }}. Nhật ký chỉ ghi tên trường, không lưu giá trị CCCD, liên hệ hoặc lương.</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('module', key='nhanvien') if admin else url_for('employee_records', manv=employee[0]) }}">Quay lại hồ sơ</a>
+</div>
+<div class="panel">
+    <div class="table-wrap"><table>
+        <thead><tr><th>Thao tác</th><th>Trường thay đổi</th><th>Người thực hiện</th><th>Thời điểm</th></tr></thead>
+        <tbody>
+            {% for row in rows %}
+            <tr><td>{{ {'tao': 'Tạo hồ sơ', 'cap_nhat': 'Cập nhật hồ sơ', 'xoa': 'Xóa hồ sơ'}.get(row[0], row[0]) }}</td><td>{{ row[1] or '—' }}</td><td>{{ row[2] }}</td><td>{{ row[3] }}</td></tr>
+            {% else %}
+            <tr><td class="empty" colspan="4">Chưa có nhật ký thay đổi.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

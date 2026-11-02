@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Vòng đời hợp đồng #{{ contract[0] }} · QLNS{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ HỢP ĐỒNG</span>
+        <h1>Vòng đời hợp đồng #{{ contract[0] }}</h1>
+        <p>{{ contract[2] }} · {{ contract[4] }} · phiên bản {{ contract[14] }}</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('module',key='hopdong') }}">← Danh sách hợp đồng</a>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Thông tin và trạng thái</h2><p>AI chỉ tạo bản nháp. Chỉ tệp đã ký do HR tải lên mới được đánh dấu chính thức.</p></div><strong>{{ contract[8] }}</strong></div>
+    <div class="table-wrap"><table><tbody>
+        <tr><th>Mã nhân viên</th><td>{{ contract[3] }}</td><th>Loại hợp đồng</th><td>{{ contract[4] }}</td></tr>
+        <tr><th>Bắt đầu</th><td>{{ contract[5] }}</td><th>Kết thúc</th><td>{{ contract[6] or 'Không thời hạn' }}</td></tr>
+        <tr><th>Lương theo hợp đồng</th><td>{{ contract[7] }}</td><th>Ngày ký</th><td>{{ contract[12] or 'Chưa ký' }}</td></tr>
+        <tr><th>Người lập</th><td>{{ contract[9] or '—' }}</td><th>Người duyệt</th><td>{{ contract[10] or '—' }}</td></tr>
+        <tr><th>Ngày duyệt</th><td>{{ contract[11] or '—' }}</td><th>Người ký/ghi nhận</th><td>{{ contract[13] or '—' }}</td></tr>
+        {% if contract[15] %}<tr><th>Hợp đồng trước</th><td colspan="3">#{{ contract[15] }}</td></tr>{% endif %}
+        {% if contract[16] %}<tr><th>Lý do chấm dứt</th><td colspan="3">{{ contract[16] }}</td></tr>{% endif %}
+    </tbody></table></div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Quy trình duyệt và ký</h2><p>Bản nháp → chờ duyệt → đã duyệt → tải tệp đã ký chính thức.</p></div></div>
+    <div class="data-form">
+        {% if contract[8] == 'Bản nháp' or has_draft_document %}
+        <form method="post"><input type="hidden" name="action" value="submit_review"><button class="btn secondary">Gửi HR/pháp chế duyệt</button></form>
+        {% endif %}
+        {% if contract[8] == 'Chờ duyệt' or has_pending_document %}
+        <form method="post"><input type="hidden" name="action" value="approve"><button class="btn primary">Đánh dấu đã duyệt</button></form>
+        <form method="post" class="form-grid">
+            <input type="hidden" name="action" value="return_draft">
+            <div class="field"><label for="LyDoTraLai">Nội dung cần chỉnh sửa</label><input id="LyDoTraLai" name="LyDo" maxlength="1000" required></div>
+            <div class="form-actions"><button class="btn secondary">Trả bản nháp để chỉnh sửa</button></div>
+        </form>
+        {% endif %}
+        {% if contract[8] == 'Đã duyệt' or has_approved_document %}
+        <form method="post" enctype="multipart/form-data" class="form-grid">
+            <input type="hidden" name="action" value="sign">
+            <div class="field"><label>Ngày ký thực tế</label><input type="date" name="NgayKy" max="{{ today.isoformat() }}" required></div>
+            <div class="field"><label>Bản chính thức đã ký (PDF/DOCX)</label><input type="file" name="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required><small>Tệp tối đa 10 MB. Ứng dụng không tự ký hoặc tự xác nhận tính hợp pháp.</small></div>
+            <div class="form-actions"><button class="btn primary">Lưu bản ký chính thức</button></div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if contract[8] in ('Đã ký','Còn hiệu lực','Hết hạn') %}
+<div class="panel">
+    <div class="panel-head"><div><h2>Gia hạn hoặc tái ký</h2><p>Tạo hợp đồng nháp phiên bản kế tiếp; hợp đồng hiện tại được giữ trong lịch sử.</p></div></div>
+    <form method="post" class="data-form">
+        <input type="hidden" name="action" value="renew">
+        <div class="form-grid"><div class="field"><label>Ngày bắt đầu mới</label><input type="date" name="NgayBatDauMoi" required></div><div class="field"><label>Ngày kết thúc mới</label><input type="date" name="NgayKetThucMoi"></div><div class="field"><label>Lương mới</label><input type="number" name="LuongMoi" min="0" step="1" value="{{ contract[7] }}" required></div></div>
+        <div class="form-actions"><button class="btn secondary">Tạo bản nháp gia hạn/tái ký</button></div>
+    </form>
+</div>
+<div class="panel">
+    <div class="panel-head"><div><h2>Chấm dứt hợp đồng</h2><p>Ghi nhận ngày có hiệu lực và lý do; lịch sử vẫn được giữ.</p></div></div>
+    <form method="post" class="data-form"><input type="hidden" name="action" value="terminate"><div class="form-grid"><div class="field"><label>Ngày chấm dứt</label><input type="date" name="NgayChamDut" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required></div><div class="field"><label>Lý do</label><input name="LyDo" maxlength="1000" required></div></div><div class="form-actions"><button class="btn danger">Ghi nhận chấm dứt</button></div></form>
+</div>
+{% endif %}
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Phụ lục, quyết định và tài liệu</h2><p>Phân loại rõ tài liệu; chỉ tài liệu được xác nhận là đã ký mới hiển thị cho nhân viên.</p></div></div>
+    <form method="post" enctype="multipart/form-data" class="data-form">
+        <input type="hidden" name="action" value="attach">
+        <div class="form-grid"><div class="field"><label>Loại tài liệu</label><select name="LoaiTaiLieu"><option>Phụ lục</option><option>Quyết định thay đổi lương</option><option>Quyết định thay đổi chức vụ</option><option>Tài liệu khác</option></select></div><div class="field"><label>Tệp PDF/DOCX</label><input type="file" name="file" accept=".pdf,.docx" required></div><div class="field"><label>Ghi chú</label><input name="GhiChu" maxlength="1000"></div><div class="field"><label>Ngày ký nếu tài liệu đã ký</label><input type="date" name="NgayKy" max="{{ today.isoformat() }}"></div></div>
+        <label><input type="checkbox" name="da_ky" value="1"> Xác nhận tài liệu đính kèm đã được ký</label>
+        <div class="form-actions"><button class="btn secondary">Lưu tài liệu</button></div>
+    </form>
+    <div class="table-wrap"><table><thead><tr><th>Tệp</th><th>Loại</th><th>Phiên bản</th><th>Trạng thái</th><th>Người lập</th><th>Người duyệt</th><th>Ngày ký</th><th>Ghi chú</th><th></th></tr></thead><tbody>
+    {% for doc in documents %}<tr><td>{{ doc[1] }}</td><td>{{ doc[3] }}</td><td>{{ doc[5] }}</td><td>{{ doc[4] }}</td><td>{{ doc[6] }}</td><td>{{ doc[8] or '—' }}</td><td>{{ doc[10] or '—' }}</td><td>{{ doc[11] or '—' }}</td><td><a class="action-link" href="{{ url_for('contracts.tai_tep_hop_dong',ma_tep=doc[0]) }}">Tải xuống</a></td></tr>{% else %}<tr><td colspan="9" class="empty">Chưa có tài liệu.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Lịch sử vòng đời</h2><p>Lưu thao tác, trạng thái, người thực hiện và thời điểm.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Thao tác</th><th>Trạng thái cũ</th><th>Trạng thái mới</th><th>Chi tiết</th><th>Người thực hiện</th><th>Thời điểm</th></tr></thead><tbody>
+    {% for item in history %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="6" class="empty">Chưa có lịch sử.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+{% endblock %}

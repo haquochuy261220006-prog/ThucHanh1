@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block title %}Báo cáo · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}{% from '_export_form.html' import export_form %}{% block title %}Báo cáo · QLNS{% endblock %}{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">PHÂN TÍCH DỮ LIỆU</span>
@@ -12,32 +12,87 @@
             <label>Chọn báo cáo</label>
             <select name="name">
                 {% for n in names %}
-                <option {% if n==name %}selected{% endif %}>{{n}}</option>
+                    <option {% if n==name %}selected{% endif %}>{{ n }}</option>
                 {% endfor %}
             </select>
         </div>
+        {% if name in ["Ngày công theo nhân viên", "Tỷ lệ nghỉ việc", "Tỷ lệ vắng mặt", "Chi phí nhân sự (kỳ lương đã khóa)", "Thời gian tuyển dụng", "Tỷ lệ hoàn thành KPI", "Dự báo nhu cầu nhân lực"] %}
+            <div class="field">
+                <label for="report-month">Tháng</label><input id="report-month"
+       type="number"
+       name="month"
+       min="1"
+       max="12"
+       value="{{ month }}"
+       required>
+            </div>
+            <div class="field">
+                <label for="report-year">Năm</label><input id="report-year"
+       type="number"
+       name="year"
+       min="2000"
+       value="{{ year }}"
+       required>
+            </div>
+        {% endif %}
         <button class="btn primary">Xem báo cáo</button>
     </form>
+    <div style="display:flex;
+                justify-content:flex-end;
+                margin-top:12px">{{ export_form('report',{'name':name,'month':month,'year':year}) }}</div>
+    {% if name=="Ngày công theo nhân viên" %}<p>Mỗi cột là một nhân viên. Tiến độ tính từ ngày có sự kiện chấm vào hợp lệ trong tháng chia cho chuẩn {{ workday_standard }} ngày công; trạng thái nghỉ hoặc bản ghi đã xóa không được tính. Giờ ghi nhận chỉ cộng các cặp vào/ra hoàn tất và dùng để đối soát, chưa phải số giờ tính lương.</p>{% endif %}
+    {% if name in ["Tỷ lệ nghỉ việc", "Tỷ lệ vắng mặt", "Chi phí nhân sự (kỳ lương đã khóa)", "Thời gian tuyển dụng", "Tỷ lệ hoàn thành KPI", "Dự báo nhu cầu nhân lực"] %}
+        <p class="muted">
+            {% if name == "Tỷ lệ nghỉ việc" %}Số nhân viên có ngày kết thúc offboarding trong năm chia cho headcount trung bình đầu/cuối năm. Chỉ tiêu phụ thuộc vào việc ghi nhận ngày nghỉ trong hồ sơ vòng đời nhân viên.{% endif %}
+            {% if name == "Tỷ lệ vắng mặt" %}Tính theo ngày nghỉ phép/nghỉ không phép đã ghi nhận trên bảng chấm công chia cho ngày làm việc thứ Hai–thứ Sáu dự kiến của nhân viên đang hoạt động; chưa điều chỉnh lịch ca và ngày lễ.{% endif %}
+            {% if name == "Chi phí nhân sự (kỳ lương đã khóa)" %}Chỉ cộng tổng lương và phần bảo hiểm doanh nghiệp của kỳ đã khóa; kỳ nháp/chưa khóa không được đưa vào.{% endif %}
+            {% if name == "Thời gian tuyển dụng" %}Số ngày từ lúc tạo hồ sơ ứng viên đến ngày vào làm, tính trung bình cho ứng viên đã liên kết với nhân viên trong năm đã chọn.{% endif %}
+            {% if name == "Tỷ lệ hoàn thành KPI" %}Tiến độ trung bình của các kết quả KPI đã duyệt trong chu kỳ kết thúc ở năm đã chọn; đây chưa phải điểm tổng hợp theo trọng số.{% endif %}
+            {% if name == "Dự báo nhu cầu nhân lực" %}Số liệu lấy từ kế hoạch định biên đã duyệt cho năm chọn; chênh lệch là kế hoạch trừ số nhân viên hiện tại, không phải dự báo thống kê tự động.{% endif %}
+        </p>
+    {% endif %}
+    {% if chart %}
+        <section class="report-chart" aria-label="Biểu đồ cột {{ chart.title }}">
+            <div class="panel-head">
+                <div>
+                    <h2>Biểu đồ cột</h2>
+                    <p>{{ chart.title }} · {{ name }}</p>
+                </div>
+            </div>
+            <div class="column-chart">
+                {% for bar in chart.bars %}
+                    <div class="column-item" title="{{ bar.label }}: {{ bar.display_value }}">
+                        <b>{{ bar.display_value }}</b>
+                        <div class="column-track">
+                            <div class="column-fill" style="height:{{ bar.height }}%"></div>
+                        </div>
+                        <span>{{ bar.label }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
                     {% for c in cols %}
-                    <th>{{c}}</th>
+                        <th>{{ c }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for row in rows %}
-                <tr>
-                    {% for v in row %}
-                    <td>{{v if v is not none else '—'}}</td>
-                    {% endfor %}
-                </tr>
+                    <tr>
+                        {% for v in row %}
+                            <td>{{ v if v is not none else '—' }}</td>
+                        {% endfor %}
+                    </tr>
                 {% else %}
-                <tr>
-                    <td colspan="{{cols|length}}" class="empty">Không có dữ liệu cho báo cáo này.</td>
-                </tr>
+                    <tr>
+                        <td colspan="{{ cols|length }}"
+                            class="empty">Không có dữ liệu cho báo cáo này.</td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

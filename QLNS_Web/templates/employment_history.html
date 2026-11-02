@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử công tác · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span>
+        <h1>Lịch sử công tác</h1>
+        <p>{{ employee[1] }} · Mã {{ employee[2] }}</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('module', key='nhanvien') }}">Quay lại danh sách</a>
+</div>
+<div class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Từ ngày</th><th>Đến ngày</th><th>Phòng ban</th><th>Chức danh</th><th>Vị trí</th><th>Quản lý</th><th>Lương cơ bản</th><th>Lý do</th><th>Người ghi nhận</th><th>Thời điểm ghi</th></tr></thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>{% for value in row %}<td>{{ value if value is not none else ('Hiện tại' if loop.index==2 else '—') }}</td>{% endfor %}</tr>
+                {% else %}
+                    <tr><td class="empty" colspan="10">Chưa có lịch sử công tác.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Nhật ký truy cập dữ liệu{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div>
+        <span class="eyebrow blue">BẢO MẬT & KIỂM SOÁT</span>
+        <h1>Nhật ký truy cập dữ liệu nhạy cảm</h1>
+        <p>Hiển thị tối đa 500 lượt truy cập gần nhất. Nhật ký lưu loại dữ liệu và thao tác, không lưu giá trị hồ sơ.</p>
+    </div>
+</section>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Thời gian</th><th>Mã nhân viên</th><th>Nhân viên</th><th>Dữ liệu</th><th>Thao tác</th><th>Người thực hiện</th></tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row[6] }}</td><td>{{ row[1] or "—" }}</td><td>{{ row[2] }}</td>
+                        <td>{{ row[3] }}</td><td>{{ row[4] }}</td><td>{{ row[5] }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="empty-state">Chưa có nhật ký truy cập.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

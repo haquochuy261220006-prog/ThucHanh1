@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Sơ đồ tổ chức · QLNS{% endblock %}
+{% macro render_nodes(nodes) %}
+    {% if nodes %}
+        <ul class="org-tree-list">
+            {% for node in nodes %}
+                <li>
+                    <div class="org-node org-{{ node.kind }}">
+                        <strong>{{ node.label }}</strong>
+                        {% if node.detail %}<small>{{ node.detail }}</small>{% endif %}
+                    </div>
+                    {{ render_nodes(node.children) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ TỔ CHỨC</span>
+        <h1>Sơ đồ tổ chức</h1>
+        <p>Cấu trúc đơn vị, phòng ban và nhân viên đang làm việc.</p>
+    </div>
+    <div class="actions">
+        <a class="btn secondary" href="{{ url_for('module', key='donvi') }}">Quản lý đơn vị</a>
+        <a class="btn secondary" href="{{ url_for('module', key='phongban') }}">Quản lý phòng ban</a>
+    </div>
+</div>
+<div class="panel org-panel">
+    {% if roots %}{{ render_nodes(roots) }}{% else %}<p class="empty">Chưa có đơn vị hoặc nhân viên để hiển thị.</p>{% endif %}
+</div>
+<style>
+    .org-tree-list { list-style: none; margin: 0; padding-left: 24px; border-left: 1px solid var(--line, #dce3ea); }
+    .org-tree-list > li { position: relative; padding: 8px 0 4px 18px; }
+    .org-tree-list > li::before { content: ""; position: absolute; top: 25px; left: 0; width: 14px; border-top: 1px solid var(--line, #dce3ea); }
+    .org-tree-list > li:last-child { padding-bottom: 0; }
+    .org-node { display: inline-flex; flex-direction: column; gap: 3px; padding: 10px 14px; border: 1px solid var(--line, #dce3ea); border-radius: 10px; background: #fff; }
+    .org-node small { color: var(--muted, #667085); }
+    .org-unit { border-color: #8bb9ee; background: #f4f8ff; }
+    .org-department { border-color: #9ac8ba; background: #f3faf7; }
+    .org-employee { padding: 7px 11px; border-style: dashed; }
+    .org-panel > .org-tree-list { padding-left: 0; border-left: 0; }
+</style>
+{% endblock %}

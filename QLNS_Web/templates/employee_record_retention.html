@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Rà soát hạn lưu hồ sơ{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span>
+        <h1>Rà soát hạn lưu tài liệu</h1>
+        <p>Danh sách tối đa 500 tài liệu đã quá hạn hoặc đến hạn trong 90 ngày. Tệp không bị xóa tự động.</p>
+    </div>
+</section>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Trạng thái hạn</th><th>Nhân viên</th><th>Mã NV</th><th>Loại tài liệu</th><th>Tên tệp</th><th>Ngày hiệu lực</th><th>Hạn lưu</th><th>Người tải</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{% if row[6] < today %}<span class="status-pill">Quá hạn</span>{% else %}<span class="status-pill">Sắp đến hạn</span>{% endif %}</td>
+                        <td>{{ row[2] }}</td><td>{{ row[1] }}</td><td>{{ row[3] }}</td><td>{{ row[4] }}</td>
+                        <td>{{ row[5] or "—" }}</td><td>{{ row[6] }}</td><td>{{ row[7] }}</td>
+                        <td><a class="action-link" href="{{ url_for('employee_records', manv=row[1]) }}">Mở hồ sơ</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="9" class="empty-state">Không có tài liệu đã đặt hạn trong 90 ngày tới.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

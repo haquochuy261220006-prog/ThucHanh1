@@ -1,10 +1,151 @@
-{% extends 'base.html' %}{% block title %}Tài khoản · QLNS{% endblock %}{% block content %}
-<div class="page-heading"><div><span class="eyebrow blue">QUẢN TRỊ</span><h1>Tài khoản đăng nhập</h1><p>Tài khoản nhân viên chỉ được chấm công và gửi đơn nghỉ phép của chính mình.</p></div></div>
-<div class="panel form-panel"><div class="panel-head"><div><h2>Tạo tài khoản nhân viên</h2><p>Mỗi nhân viên có tối đa một tài khoản.</p></div></div>
-<form method="post" class="data-form"><input type="hidden" name="action" value="add"><div class="form-grid">
-<div class="field"><label>Nhân viên *</label><select name="MaNV" required><option value="">-- Chọn nhân viên --</option>{% for p in people %}<option value="{{p[0]}}">{{p[1]}} ({{p[2]}})</option>{% endfor %}</select></div>
-<div class="field"><label>Tên đăng nhập *</label><input name="username" required maxlength="30" autocomplete="off" placeholder="Ví dụ: nv01"></div>
-<div class="field"><label>Mật khẩu *</label><input type="password" name="password" required minlength="6" autocomplete="new-password" placeholder="Ít nhất 6 ký tự"></div>
-</div><div class="form-actions"><button class="btn primary">＋ Tạo tài khoản</button></div></form></div>
-<div class="panel"><div class="panel-head"><div><h2>Danh sách tài khoản</h2><p>{{rows|length}} tài khoản</p></div></div>
-<div class="table-wrap"><table><thead><tr>{% for c in cols %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr></thead><tbody>{% for row in rows %}<tr>{% for v in row %}<td>{{v if v is not none else '—'}}</td>{% endfor %}<td class="actions">{% if row[1].startswith('Nhân viên') %}<form method="post" onsubmit="return confirm('Xóa tài khoản {{row[0]}}?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{row[0]}}"><button class="action-link danger-link">Xóa</button></form>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="{{cols|length+1}}" class="empty">Chưa có tài khoản.</td></tr>{% endfor %}</tbody></table></div></div>{% endblock %}
+{% extends "base.html" %}
+{% from '_export_form.html' import export_form %}
+{% block title %}Tài khoản · QLNS{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow blue">QUẢN TRỊ</span>
+            <h1>Tài khoản đăng nhập</h1>
+            <p>Tài khoản nhân viên chỉ được chấm công và gửi đơn nghỉ phép của chính mình.</p>
+        </div>
+    </div>
+    <div class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Tạo tài khoản nhân viên</h2>
+                <p>Mỗi nhân viên có tối đa một tài khoản.</p>
+            </div>
+        </div>
+        <form method="post" class="data-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="add">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Nhân viên *</label>
+                    <select name="MaNV" id="MaNV" required>
+                        <option value="">-- Chọn nhân viên --</option>
+                        {% for p in people %}<option value="{{ p[0] }}"
+        data-email="{{ p[3] or '' }}"
+        data-phone="{{ p[4] or '' }}">{{ p[1] }} ({{ p[2] }})</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Tên đăng nhập *</label><input name="username"
+       required
+       maxlength="30"
+       autocomplete="off"
+       placeholder="Ví dụ: nv01">
+                </div>
+                <div class="field">
+                    <label>Mật khẩu *</label><input type="password"
+       name="password"
+       required
+       minlength="10"
+       maxlength="256"
+       autocomplete="new-password"
+       placeholder="Từ 10 đến 256 ký tự">
+                </div>
+                <div class="field">
+                    <label>Vai trò *</label>
+                    <select name="role" required>{% for role,label in role_options %}<option value="{{ role }}" {% if role == 'NhanVien' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                    <small>Chỉ người có quyền quản lý tài khoản mới được gán vai trò.</small>
+                </div>
+                <div class="field">
+                    <label for="otp-channel">Gửi mã xác nhận qua</label>
+                    <select name="channel" id="otp-channel">
+                        <option value="email">Gmail / Email nhân viên</option>
+                        <option value="sms">Số điện thoại nhân viên (SMS)</option>
+                    </select>
+                    <small id="otp-recipient"
+                           aria-live="polite">Chọn nhân viên để xem địa chỉ nhận mã.</small>
+                </div>
+                <div class="field">
+                    <label>Mã xác nhận *</label>
+                    <input name="otp"
+                           required
+                           inputmode="numeric"
+                           pattern="[0-9]{6}"
+                           maxlength="6"
+                           autocomplete="one-time-code"
+                           placeholder="Nhập mã 6 chữ số">
+                    <small id="otp-status" aria-live="polite">Mã gửi đến địa chỉ email hoặc số điện thoại trong hồ sơ nhân viên, có hiệu lực 5 phút.</small>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn secondary" type="button" id="send-otp">Gửi mã xác nhận</button>
+                <button class="btn primary" type="submit">Tạo tài khoản</button>
+            </div>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Danh sách tài khoản</h2>
+                <p>{{ rows|length }} tài khoản</p>
+            </div>
+            {{ export_form("accounts") }}
+        </div>
+        <div class="table-wrap"><table><thead><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}<th>Thao tác</th></tr></thead><tbody>
+            {% for row in rows %}<tr>{% for v in row %}<td>{{ v if v is not none else '—' }}</td>{% endfor %}<td class="actions">
+{% if row[0] != current_username %}
+<details><summary class="action-link">Sửa</summary><form method="post" class="data-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="edit"><input type="hidden" name="username" value="{{ row[0] }}">
+<label>Tên đăng nhập <input name="new_username" value="{{ row[0] }}" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]{3,30}"></label>
+<label>Vai trò <select name="role" required>{% for role,label in role_options %}<option value="{{ role }}" {% if account_roles.get(row[0]) == role %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Mật khẩu mới (để trống nếu không đổi) <input type="password" name="password" minlength="10" maxlength="256" autocomplete="new-password"></label>
+<button class="btn secondary" type="submit">Lưu</button></form></details>
+<form method="post" onsubmit="return confirm('Xóa tài khoản này?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ row[0] }}"><button type="submit" class="action-link danger-link">Xóa</button></form>
+{% endif %}</td></tr>
+{% else %}<tr><td colspan="{{ cols|length+1 }}"
+    class="empty">Chưa có tài khoản.</td></tr>{% endfor %}
+        </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    document.getElementById('send-otp').addEventListener('click', async function() {
+        const employee = document.getElementById('MaNV').value;
+        const status = document.getElementById('otp-status');
+        if (!employee) {
+            status.textContent = 'Vui lòng chọn nhân viên trước.';
+            return;
+        }
+        this.disabled = true;
+        status.textContent = 'Đang gửi mã...';
+        try {
+            const body = new URLSearchParams({
+                action: 'send_otp',
+                MaNV: employee,
+                channel: document.getElementById('otp-channel').value
+            });
+            const response = await fetch(window.location.pathname, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
+                body
+            });
+            const result = await response.json();
+            status.textContent = result.message || result.error || 'Không gửi được mã OTP.';
+        } catch (error) {
+            status.textContent = 'Không gửi được mã OTP. Vui lòng thử lại.';
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    function updateOtpRecipient() {
+        const employee = document.getElementById('MaNV');
+        const channel = document.getElementById('otp-channel').value;
+        const status = document.getElementById('otp-recipient');
+        const option = employee.options[employee.selectedIndex];
+        if (!employee.value) {
+            status.textContent = 'Chọn nhân viên để xem địa chỉ nhận mã.';
+            return;
+        }
+        const recipient = option.dataset[channel] || '';
+        status.textContent = recipient ? `Mã sẽ được gửi đến: ${recipient}` : (channel === 'email' ? 'Nhân viên chưa có email trong hồ sơ.' : 'Nhân viên chưa có số điện thoại trong hồ sơ.');
+    }
+    document.getElementById('MaNV').addEventListener('change', updateOtpRecipient);
+    document.getElementById('otp-channel').addEventListener('change', updateOtpRecipient);
+    updateOtpRecipient();
+</script>
+{% endblock %}

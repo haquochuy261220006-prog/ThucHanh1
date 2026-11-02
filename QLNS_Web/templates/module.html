@@ -1,123 +1,344 @@
-{% extends 'base.html' %}{% block title %}{{m.title}} · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}{% from '_export_form.html' import export_form %}{% block title %}{{ m.title }} · QLNS{% endblock %}{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">QUẢN TRỊ DỮ LIỆU</span>
-        <h1>{{m.title}}</h1>
-        <p>Thêm mới, cập nhật và tìm kiếm thông tin {{m.title|lower}}.</p>
+        <h1>{{ m.title }}</h1>
+        <p>Thêm mới, cập nhật và tìm kiếm thông tin {{ m.title|lower }}.</p>
     </div>
-    <div class="actions">{% if key=='hopdong' %}<a class="btn primary" href="{{url_for('contracts.soan')}}">✎　Soạn HĐ bằng AI</a>{% endif %}<a class="btn secondary" href="{{url_for('export',key=key)}}">↓　Xuất CSV</a></div>
+    <div class="actions">{% if key=="hopdong" and can_manage %}<a class="btn primary" href="{{ url_for('contracts.soan') }}">✎　Soạn hợp đồng</a>{% endif %}{% if can_export %}{{ export_form(key,{'q':request.args.get('q','')}) }}{% endif %}</div>
 </div>
+{% if key=="hopdong" and contract_expiry_alerts %}<div class="panel"><div class="panel-head"><div><h2>Cảnh báo hợp đồng sắp hết hạn</h2><p>Hợp đồng có ngày kết thúc trong vòng 90 ngày tới.</p></div></div><div class="table-wrap"><table><thead><tr><th>Mã HĐ</th><th>Nhân viên</th><th>Loại</th><th>Ngày kết thúc</th><th>Còn lại</th><th></th></tr></thead><tbody>{% for item in contract_expiry_alerts %}<tr><td>{{ item[0] }}</td><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td>{% if item[4] <= 30 %}≤ 30 ngày{% elif item[4] <= 60 %}31–60 ngày{% else %}61–90 ngày{% endif %}</td><td><a class="action-link" href="{{ url_for('contracts.vong_doi',mahd=item[0]) }}">Xem vòng đời</a></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
+{% if key=="hopdong" %}<div class="panel"><div class="panel-head"><div><h2>Hợp đồng mẫu</h2><p>Kéo thả hoặc chọn tệp PDF/Word. Xác nhận đây là hợp đồng mẫu; hệ thống trích xuất văn bản để bạn xem lại và chọn làm tài liệu tham khảo.</p></div><div class="actions">{{ export_form("contract_templates") }}<a class="btn primary" href="{{ url_for('contracts.soan') }}">Soạn hợp đồng bằng AI</a></div></div>
+    <form method="post"
+          action="{{ url_for('contracts.mau_hop_dong') }}"
+          enctype="multipart/form-data"
+          class="data-form">
+        <div class="form-grid">
+            <div class="field">
+                <label for="TenMau">Tên mẫu</label><input id="TenMau"
+       name="TenMau"
+       maxlength="120"
+       placeholder="Ví dụ: Hợp đồng lao động chính thức">
+            </div>
+            <div class="field">
+                <label for="contract-file">Tệp hợp đồng mẫu (PDF, Word .doc hoặc .docx)</label>
+                <div id="contract-file-drop"
+                     style="padding:16px;
+                            border:2px dashed #bdc9da;
+                            border-radius:10px;
+                            text-align:center">
+                    <p style="margin:0 0 10px">Thả tệp hợp đồng vào đây</p>
+                    <input id="contract-file"
+                           name="file"
+                           type="file"
+                           accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                           required>
+                </div>
+                <small id="contract-file-status" aria-live="polite">Chưa chọn tệp.</small><small>Tệp tối đa 8 MB. DOC cũ cần Microsoft Word trên máy chạy ứng dụng; hợp đồng scan trong PDF hoặc ảnh nhúng DOCX cần Tesseract OCR (tối đa 5 trang/ảnh). Xóa thông tin cá nhân trước khi tải; văn bản được gửi tới nhà cung cấp AI nếu chọn mẫu khi soạn.</small>
+            </div>
+        </div>
+        <label class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="xac_nhan_hop_dong" value="1" required> Tôi xác nhận tệp tải lên là hợp đồng mẫu.</label>
+        <div class="form-actions">
+            <button class="btn secondary">Nhận dạng và lưu mẫu hợp đồng</button>
+        </div>
+    </form>
+    {% if contract_templates %}<div class="table-wrap"><table><thead><tr><th>Tên mẫu</th><th>Tệp</th><th>Ngày tải</th><th>Văn bản trích xuất</th><th>Thao tác</th></tr></thead><tbody>{% for item in contract_templates %}<tr><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td><details><summary>Xem nội dung</summary><pre style="white-space:pre-wrap;
+            max-width:420px;
+            max-height:240px;
+            overflow:auto">{{item[4][:2000]}}</pre></details></td><td><form method="post"
+      action="{{ url_for('contracts.mau_hop_dong') }}"
+      onsubmit="return confirm('Xóa mẫu hợp đồng này?')">
+                                <input type="hidden" name="action" value="delete"><input type="hidden" name="MaMau" value="{{ item[0] }}"><button class="action-link danger-link">Xóa mẫu</button></form></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="empty">Chưa tải hợp đồng mẫu nào.</p>{% endif %}
+    {% if contract_documents %}<div class="panel-head"><div><h2>Tệp và phiên bản hợp đồng</h2><p>{{ contract_documents|length }} tài liệu</p></div></div><div class="table-wrap"><table><thead><tr><th>Nhân viên</th><th>Mã HĐ</th><th>Tệp</th><th>Loại tài liệu</th><th>Phiên bản</th><th>Trạng thái</th><th>Ngày lưu</th><th></th></tr></thead><tbody>{% for doc in contract_documents %}<tr><td>{{ doc[1] }}</td><td>{{ doc[2] }}</td><td>{{ doc[3] }}</td><td>{{ doc[5] }}</td><td>{{ doc[6] }}</td><td>{{ doc[7] }}</td><td>{{ doc[8] }}</td><td><a class="action-link" href="{{ url_for('contracts.tai_tep_hop_dong',ma_tep=doc[0]) }}">Tải xuống</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="empty">Chưa lưu tệp hợp đồng nào.</p>{% endif %}</div>{% endif %}
+{% if key=="nhanvien" and can_manage %}<div class="actions" style="margin:0 0 16px"><a class="btn secondary" href="{{ url_for('scan_nhanvien') }}">Quét giấy tờ nhân viên</a><a class="btn primary" href="{{ url_for('module',key=key,add=1) }}#employeeForm">＋ Thêm mới</a></div>{% endif %}
+{% if key=="hopdong" %}
+    <script>
+        (() => {
+            const drop = document.getElementById('contract-file-drop');
+            const input = document.getElementById('contract-file');
+            const status = document.getElementById('contract-file-status');
+            const showFile = file => {
+                status.textContent = file ? `Đã chọn: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)` : 'Chưa chọn tệp.';
+            };
+            input.addEventListener('change', () => showFile(input.files[0]));
+            drop.addEventListener('dragover', event => {
+                event.preventDefault();
+                drop.style.borderColor = 'var(--blue)';
+            });
+            drop.addEventListener('dragleave', () => {
+                drop.style.borderColor = '#bdc9da';
+            });
+            drop.addEventListener('drop', event => {
+                event.preventDefault();
+                drop.style.borderColor = '#bdc9da';
+                const file = event.dataTransfer.files[0];
+                if (!file) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                showFile(file);
+            });
+        })();
+    </script>
+{% endif %}
+{% if can_manage and (key!="nhanvien" or edit or request.args.get('add')=='1' or request.args.get('prefill')=='1') %}
+<div id="{{ 'employeeForm' if key=='nhanvien' else 'recordForm' }}">
 <div class="panel form-panel">
     <div class="panel-head">
         <div>
             <h2>{{'Cập nhật thông tin' if edit else 'Thêm '+m.title|lower+' mới'}}</h2>
             <p>Các trường có dấu * là bắt buộc.</p>
-        </div>{% if edit %}
-        <a class="btn secondary" href="{{url_for('module',key=key)}}">Hủy sửa</a>{% endif %}
+        </div>
+        {% if edit %}
+            <a class="btn secondary" href="{{ url_for('module',key=key) }}">Hủy sửa</a>{% endif %}
+        {% if key=="nhanvien" and not edit %}<a class="btn secondary" href="{{ url_for('module',key=key) }}">Đóng biểu mẫu</a>{% endif %}
     </div>
-    <form method="post" class="data-form">{% if edit %}
-        <input type="hidden" name="id" value="{{request.args.get('edit')}}">{% endif %}
+    <form method="post"
+          class="data-form"
+          {% if key=='nhanvien' %}enctype="multipart/form-data"{% endif %}>
+        {% if edit %}
+            <input type="hidden" name="id" value="{{ request.args.get('edit') }}">
+        {% endif %}
+        {% if key=='nhanvien' %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if not edit %}<input type="hidden" name="employee_source_key" value="{{ employee_source_key }}">{% endif %}
+        {% endif %}
         <input type="hidden" name="action" value="{{'update' if edit else 'add'}}">
-        <div class="form-grid">{% for col,label,typ,required in m.fields %}
-            <div class="field">
-                <label>{{label}}{% if required %} *{% endif %}
-                </label>{% if typ.startswith('choice:') %}
-                <select name="{{col}}" {% if required %}required{% endif %}>
-                    <option value="">-- Chọn --</option>{% for opt in typ.split(':',1)[1].split('|') %}<option value="{{opt}}" {% if edit and edit[col]|string==opt %}selected{% endif %}>{{opt}}</option>{% endfor %}</select>{% elif typ in ('department','position','employee') %}<select name="{{col}}" {% if required %}required{% endif %}><option value="">-- Chọn {{label|lower}} --</option>{% for opt in options.get(col,[]) %}<option value="{{opt[0]}}" {% if edit and edit[col]|string==opt[0]|string %}selected{% endif %}>{{opt[1]}}</option>{% endfor %}</select>{% if key=='nhanvien' and typ=='position' %}<button type="button" class="btn secondary" id="btnAddCV" style="align-self:flex-start">＋ Thêm chức vụ</button>{% endif %}{% else %}<input name="{{col}}" type="{{typ}}" value="{{edit[col] if edit and edit[col] is not none else ''}}" {% if required %}required{% endif %} {% if typ=='number' %}step="any"{% endif %} placeholder="Nhập {{label|lower}}">{% endif %}
-            </div>{% endfor %}</div><div class="form-actions">
-                <button class="btn primary">{{'Lưu thay đổi' if edit else '＋ Thêm mới'}}</button>
-                <a class="btn secondary" href="{{url_for('module',key=key)}}">Làm mới</a>
+        {% if key=='nhanvien' and edit %}
+            <div class="form-grid">
+                <div class="field"><label for="NgayHieuLuc">Ngày hiệu lực thay đổi</label><input id="NgayHieuLuc" name="NgayHieuLuc" type="date" value="{{ today }}" required></div>
+                <div class="field"><label for="LyDoDieuChinh">Lý do thay đổi</label><input id="LyDoDieuChinh" name="LyDoDieuChinh" maxlength="500" placeholder="Lý do cập nhật phòng ban, chức danh, vị trí hoặc lương"></div>
             </div>
+        {% endif %}
+        <div class="form-grid">
+            {% for col,label,typ,required in m.fields %}
+                <div class="field">
+                    <label>{{ label }}{% if required %} *{% endif %}</label>{% if typ=="image" %}<input name="{{ col }}" type="file" accept="image/jpeg,image/png,image/webp">{% if edit and edit[col] %}<img src="{{ url_for('nhanvien_anh',manv=edit_id) }}"
+     alt="Ảnh hồ sơ hiện tại"
+     style="display:block;
+            width:96px;
+            height:96px;
+            object-fit:cover;
+            border-radius:12px;
+            margin-top:8px">{% endif %}<small>JPEG, PNG hoặc WEBP, tối đa 5 MB. Khi thay ảnh, nhân viên cần đăng ký khuôn mặt lại.</small>{% elif typ.startswith("choice:") %}
+                    <select name="{{ col }}" {% if required %}required{% endif %}>
+                        <option value="">-- Chọn --</option>{% for opt in typ.split(':',1)[1].split('|') %}<option value="{{ opt }}"
+        {% if edit and edit[col]|string==opt %}selected{% endif %}>{{ opt }}</option>{% endfor %}</select>{% elif typ in ("department","position","employee","jobposition","unit","department_parent") %}<select name="{{ col }}" {% if required %}required{% endif %}><option value="">-- Chọn {{ label|lower }} --</option>{% for opt in options.get(col,[]) %}<option value="{{ opt[0] }}"
+        {% if edit and edit[col]|string==opt[0]|string %}selected{% endif %}>{{ opt[1] }}</option>{% endfor %}</select>{% if key=="nhanvien" and typ=="position" %}<button type="button"
+        class="btn secondary"
+        id="btnAddCV"
+        style="align-self:flex-start">＋ Thêm chức vụ</button>{% endif %}{% else %}<input name="{{ col }}"
+       type="{{ typ }}"
+       value="{{ edit[col] if edit and edit[col] is not none else '' }}"
+       {% if required %}required{% endif %}
+       {% if typ=='number' %}step="any"{% endif %}
+       placeholder="Nhập {{ label|lower }}">{% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="form-actions">
+        <button class="btn primary">{{'Lưu thay đổi' if edit else '＋ Thêm mới'}}</button>
+        <a class="btn secondary" href="{{ url_for('module',key=key) }}">Làm mới</a>
+    </div>
+</form>
+</div>
+</div>
+{% endif %}
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Danh sách {{ m.title|lower }}</h2>
+            <p>{{ rows|length }} bản ghi được hiển thị</p>
+        </div>
+        <form class="search" method="get">
+            <input name="q"
+                   value="{{ request.args.get('q', '') }}"
+                   placeholder="{{'Nhập mã nhân viên...' if key=='nhanvien' else 'Tìm kiếm nhanh...'}}">
+            <button class="btn secondary">Tìm</button>
         </form>
     </div>
-    <div class="panel">
-        <div class="panel-head">
-            <div>
-                <h2>Danh sách {{m.title|lower}}</h2>
-                <p>{{rows|length}} bản ghi được hiển thị</p>
-            </div>
-            <form class="search" method="get">
-                <input name="q" value="{{request.args.get('q','')}}" placeholder="{{'Nhập mã nhân viên...' if key=='nhanvien' else 'Tìm kiếm nhanh...'}}">
-                <button class="btn secondary">Tìm</button>
-            </form>
-        </div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    {% set s0 = 1 if key=='nhanvien' else 0 %}<tr><th>STT</th>{% for c in cols[s0:] %}<th>{{c}}</th>{% endfor %}<th>Thao tác</th></tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                {% set s0 = 1 if key=='nhanvien' else 0 %}<tr><th>STT</th>{% for c in cols[s0:] %}<th>{{ c }}</th>{% endfor %}<th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
                     <tr>
-                        <td>{{loop.index}}</td>
+                        <td>{{ loop.index }}</td>
                         {% for v in row[s0:] %}
-                        <td>{{v if v is not none else '—'}}</td>
+                            <td>{{ v if v is not none else '—' }}</td>
                         {% endfor %}
                         <td class="actions">
-                            <a class="action-link" href="{{url_for('module',key=key,edit=row[0])}}">Sửa</a>{% if key=='hopdong' %}<a class="action-link" href="{{url_for('contracts.soan',mahd=row[0])}}">Soạn Word</a>{% endif %}
-                            <form method="post" onsubmit="return confirm('{% if key=='nhanvien' %}Xóa nhân viên sẽ xóa luôn hợp đồng, chấm công, nghỉ phép, lương và tài khoản của người này. Không thể hoàn tác. Tiếp tục?{% else %}Bạn có chắc muốn xóa bản ghi này?{% endif %}')">
+                            {% if can_manage and (key!="hopdong" or row[6]=="Bản nháp") %}<a class="action-link"
+                               href="{{ url_for('module',key=key,edit=row[0]) }}">Sửa</a>{% endif %}{% if key=="nhanvien" and can_manage %}<a class="action-link" href="{{ url_for('lich_su_cong_tac',manv=row[0]) }}">Lịch sử công tác</a><a class="action-link" href="{{ url_for('employee_records',manv=row[0]) }}">Hồ sơ điện tử</a><a class="action-link" href="{{ url_for('employee_custom_values',manv=row[0]) }}">Thông tin mở rộng</a>{% endif %}{% if key=="hopdong" and can_manage %}<a class="action-link"
+   href="{{ url_for('contracts.soan',mahd=row[0]) }}">Soạn Word</a><a class="action-link"
+   href="{{ url_for('contracts.vong_doi',mahd=row[0]) }}">Vòng đời</a>{% endif %}
+                            {% if can_manage and key!="hopdong" %}
+                            <form method="post"
+                                  onsubmit="return confirm('{% if key=='nhanvien' %}Xóa nhân viên sẽ xóa luôn hợp đồng, chấm công, nghỉ phép, lương và tài khoản của người này. Không thể hoàn tác. Tiếp tục?{% else %}Bạn có chắc muốn xóa bản ghi này?{% endif %}')">
+                                
                                 <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="{{row[0]}}">
+                                <input type="hidden" name="id" value="{{ row[0] }}">
                                 <button class="action-link danger-link">Xóa</button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
-                    {% else %}
+                {% else %}
                     <tr>
-                        <td colspan="{{cols|length-s0+2}}" class="empty">Không tìm thấy dữ liệu phù hợp.</td>
+                        <td colspan="{{ cols|length-s0+2 }}"
+                            class="empty">Không tìm thấy dữ liệu phù hợp.</td>
                     </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-{% if key=='nhanvien' %}
-<dialog id="cvDialog" style="border:1px solid var(--line);border-radius:13px;padding:22px;width:min(380px,92vw);box-shadow:0 20px 60px #1b36532e">
-    <h2 style="font-size:14px;margin:0 0 4px">Thêm chức vụ</h2>
-    <p id="cvDeptName" style="font-size:11px;color:var(--muted);margin:0 0 14px"></p>
-    <div class="field"><label for="cvName">Tên chức vụ *</label><input id="cvName" maxlength="100" placeholder="Ví dụ: Kế toán trưởng" autocomplete="off"></div>
-    <p id="cvErr" style="font-size:11px;color:var(--red);margin:10px 0 0;display:none"></p>
-    <div class="form-actions"><button type="button" class="btn primary" id="cvOk">Thêm</button><button type="button" class="btn secondary" id="cvCancel">Hủy</button></div>
-</dialog>
-<script>
-(function(){
-    var CV={{options.get('cv_data',[])|tojson}};
-    var selPB=document.querySelector('select[name="MaPB"]'),selCV=document.querySelector('select[name="MaCV"]');
-    var btn=document.getElementById('btnAddCV'),dlg=document.getElementById('cvDialog'),inp=document.getElementById('cvName'),err=document.getElementById('cvErr');
-    if(!selPB||!selCV||!btn||!dlg)return;
-    function allowed(c,pb){return !pb||c.depts.length===0||c.depts.indexOf(+pb)>-1;}
-    function render(initial){
-        var pb=selPB.value,cur=selCV.value;
-        selCV.innerHTML='';selCV.appendChild(new Option('-- Chọn chức vụ --',''));
-        CV.forEach(function(c){if(allowed(c,pb)||(initial&&String(c.id)===cur))selCV.appendChild(new Option(c.name,c.id));});
-        selCV.value=cur;if(selCV.value!==cur)selCV.value='';
-        btn.disabled=!pb;btn.title=pb?'':'Chọn phòng ban trước';
-    }
-    function showErr(m){err.textContent=m;err.style.display=m?'block':'none';}
-    selPB.addEventListener('change',function(){render(false);});
-    btn.addEventListener('click',function(){
-        if(!selPB.value)return;
-        document.getElementById('cvDeptName').textContent='Phòng ban: '+selPB.options[selPB.selectedIndex].text;
-        inp.value='';showErr('');dlg.showModal();inp.focus();
-    });
-    document.getElementById('cvCancel').addEventListener('click',function(){dlg.close();});
-    function submit(){
-        var name=inp.value.trim();if(!name){showErr('Vui lòng nhập tên chức vụ.');return;}
-        fetch('{{url_for("chucvu_nhanh")}}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({TenCV:name,MaPB:selPB.value})})
-        .then(function(r){return r.json();})
-        .then(function(d){
-            if(!d.ok){showErr(d.error||'Không thêm được chức vụ.');return;}
-            var c=CV.filter(function(x){return x.id===d.id;})[0];
-            if(!c){CV.push({id:d.id,name:d.name,depts:[+selPB.value]});}
-            else if(c.depts.length&&c.depts.indexOf(+selPB.value)<0){c.depts.push(+selPB.value);}
-            render(false);selCV.value=String(d.id);dlg.close();
-        })
-        .catch(function(){showErr('Không kết nối được máy chủ. Hãy tải lại trang và thử lại.');});
-    }
-    document.getElementById('cvOk').addEventListener('click',submit);
-    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
-    render(true);
-})();
-</script>
+</div>
+{% if key=="nhanvien" %}
+    <script>
+        const prefillData = {{prefill|tojson}};
+        if (Object.keys(prefillData).length) {
+            Object.keys(prefillData).forEach(name => {
+                const field = document.querySelector('[name="' + name + '"]');
+                if (!field) return;
+                const value = prefillData[name] || '';
+                if (field.tagName === 'SELECT') {
+                    const option = Array.from(field.options).find(item => item.value === value);
+                    if (option) field.value = value;
+                } else field.value = value;
+            });
+        }
+    </script>
+    <dialog id="cvDialog"
+            style="border:1px solid var(--line);
+                   border-radius:13px;
+                   padding:22px;
+                   width:min(380px,92vw);
+                   box-shadow:0 20px 60px #1b36532e">
+        <h2 style="font-size:14px;margin:0 0 4px">Thêm chức vụ</h2>
+        <p id="cvDeptName"
+           style="font-size:11px;
+                  color:var(--muted);
+                  margin:0 0 14px"></p>
+        <div class="field">
+            <label for="cvName">Tên chức vụ *</label><input id="cvName"
+       maxlength="100"
+       placeholder="Ví dụ: Kế toán trưởng"
+       autocomplete="off">
+        </div>
+        <p id="cvErr"
+           style="font-size:11px;
+                  color:var(--red);
+                  margin:10px 0 0;
+                  display:none"></p>
+        <div class="form-actions">
+            <button type="button" class="btn primary" id="cvOk">Thêm</button><button type="button"
+        class="btn secondary"
+        id="cvCancel">Hủy</button>
+        </div>
+    </dialog>
+    <script>
+        (function() {
+            var CV = {{options.get('cv_data',[])|tojson}};
+            var selPB = document.querySelector('select[name="MaPB"]'),
+                selCV = document.querySelector('select[name="MaCV"]');
+            var btn = document.getElementById('btnAddCV'),
+                dlg = document.getElementById('cvDialog'),
+                inp = document.getElementById('cvName'),
+                err = document.getElementById('cvErr');
+            if (!selPB || !selCV || !btn || !dlg) return;
+
+            function allowed(c, pb) {
+                return !pb || c.depts.length === 0 || c.depts.indexOf(+pb) > -1;
+            }
+
+            function render(initial) {
+                var pb = selPB.value,
+                    cur = selCV.value;
+                selCV.innerHTML = '';
+                selCV.appendChild(new Option('-- Chọn chức vụ --', ''));
+                CV.forEach(function(c) {
+                    if (allowed(c, pb) || (initial && String(c.id) === cur)) selCV.appendChild(new Option(c.name, c.id));
+                });
+                selCV.value = cur;
+                if (selCV.value !== cur) selCV.value = '';
+                btn.disabled = !pb;
+                btn.title = pb ? '' : 'Chọn phòng ban trước';
+            }
+
+            function showErr(m) {
+                err.textContent = m;
+                err.style.display = m ? 'block' : 'none';
+            }
+            selPB.addEventListener('change', function() {
+                render(false);
+            });
+            btn.addEventListener('click', function() {
+                if (!selPB.value) return;
+                document.getElementById('cvDeptName').textContent = 'Phòng ban: ' + selPB.options[selPB.selectedIndex].text;
+                inp.value = '';
+                showErr('');
+                dlg.showModal();
+                inp.focus();
+            });
+            document.getElementById('cvCancel').addEventListener('click', function() {
+                dlg.close();
+            });
+
+            function submit() {
+                var name = inp.value.trim();
+                if (!name) {
+                    showErr('Vui lòng nhập tên chức vụ.');
+                    return;
+                }
+                fetch('{{url_for("chucvu_nhanh")}}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            TenCV: name,
+                            MaPB: selPB.value
+                        })
+                    })
+                    .then(function(r) {
+                        return r.json();
+                    })
+                    .then(function(d) {
+                        if (!d.ok) {
+                            showErr(d.error || 'Không thêm được chức vụ.');
+                            return;
+                        }
+                        var c = CV.filter(function(x) {
+                            return x.id === d.id;
+                        })[0];
+                        if (!c) {
+                            CV.push({
+                                id: d.id,
+                                name: d.name,
+                                depts: [+selPB.value]
+                            });
+                        } else if (c.depts.length && c.depts.indexOf(+selPB.value) < 0) {
+                            c.depts.push(+selPB.value);
+                        }
+                        render(false);
+                        selCV.value = String(d.id);
+                        dlg.close();
+                    })
+                    .catch(function() {
+                        showErr('Không kết nối được máy chủ. Hãy tải lại trang và thử lại.');
+                    });
+            }
+            document.getElementById('cvOk').addEventListener('click', submit);
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submit();
+                }
+            });
+            render(true);
+        })();
+    </script>
 {% endif %}
 {% endblock %}

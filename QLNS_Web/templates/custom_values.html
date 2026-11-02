@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Thông tin mở rộng · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span><h1>Thông tin mở rộng</h1><p>{{ employee[1] }} · Mã {{ employee[2] }}</p></div><a class="btn secondary" href="{{ url_for('module',key='nhanvien') }}">Quay lại</a></div>
+<div class="panel form-panel"><form method="post" class="data-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">{% for field in fields %}<div class="field"><label for="field_{{ field[0] }}">{{ field[1] }}{% if field[3] %} *{% endif %}</label>
+        {% if field[2]=='boolean' %}<select id="field_{{ field[0] }}" name="field_{{ field[0] }}" {% if field[3] %}required{% endif %}><option value="0" {% if field[5] != '1' %}selected{% endif %}>Không</option><option value="1" {% if field[5] == '1' %}selected{% endif %}>Có</option></select>
+        {% else %}<input id="field_{{ field[0] }}" name="field_{{ field[0] }}" type="{{ 'date' if field[2]=='date' else 'email' if field[2]=='email' else 'number' if field[2]=='number' else 'text' }}" value="{{ field[5] }}" maxlength="1000" {% if field[2]=='number' %}step="any"{% endif %} {% if field[3] %}required{% endif %}>{% endif %}
+    </div>{% else %}<p class="empty">Chưa có trường tùy chỉnh đang hoạt động.</p>{% endfor %}</div>
+    {% if fields %}<div class="form-actions"><button class="btn primary">Lưu thông tin</button></div>{% endif %}
+</form></div>
+{% endblock %}

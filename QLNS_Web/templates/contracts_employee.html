@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Hợp đồng của tôi · QLNS{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">HỒ SƠ CÁ NHÂN</span>
+        <h1>Hợp đồng của tôi</h1>
+        <p>Chỉ hiển thị hợp đồng và tài liệu chính thức đã ký thuộc hồ sơ của bạn.</p>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Hợp đồng đã ký</h2><p>{{ contracts|length }} hợp đồng</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Mã HĐ</th><th>Loại</th><th>Bắt đầu</th><th>Kết thúc</th><th>Lương theo HĐ</th><th>Trạng thái</th><th>Ngày ký</th><th>Phiên bản</th></tr></thead><tbody>
+    {% for item in contracts %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="8" class="empty">Chưa có hợp đồng chính thức đã ký được cấp cho tài khoản này.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><div><h2>Bản ký, phụ lục và quyết định đã ký</h2><p>Tệp nháp, bản AI và tài liệu chưa xác nhận ký không được hiển thị ở đây.</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Mã HĐ</th><th>Tệp</th><th>Định dạng</th><th>Phiên bản</th><th>Ngày ký</th><th>Ngày tải lên</th><th></th></tr></thead><tbody>
+    {% for item in documents %}<tr>{% for value in item[1:] %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}<td><a class="action-link" href="{{ url_for('contracts.tai_tep_hop_dong',ma_tep=item[0]) }}">Tải xuống</a></td></tr>{% else %}<tr><td colspan="7" class="empty">Chưa có bản ký hoặc tài liệu đã ký.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+{% endblock %}
