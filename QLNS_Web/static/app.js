@@ -1,6 +1,13 @@
 (() => {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
 
+    document.querySelectorAll('.avatar-image').forEach((image) => {
+        const showLoadedImage = () => image.classList.toggle('is-loaded', image.naturalWidth > 0);
+        image.addEventListener('load', showLoadedImage, { once: true });
+        image.addEventListener('error', showLoadedImage, { once: true });
+        if (image.complete) showLoadedImage();
+    });
+
     if (token) {
         document.addEventListener('submit', (event) => {
             const form = event.target;
@@ -15,15 +22,40 @@
         }, true);
 
         const nativeFetch = window.fetch;
-        window.fetch = function (url, options = {}) {
+        window.fetch = function(url, options = {}) {
             const method = (options.method || 'GET').toUpperCase();
             if (method === 'GET' || method === 'HEAD') return nativeFetch.call(this, url, options);
 
             const headers = new Headers(options.headers || {});
             if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', token);
-            return nativeFetch.call(this, url, { ...options, headers });
+            return nativeFetch.call(this, url, {
+                ...options,
+                headers
+            });
         };
     }
+
+    document.getElementById('admin-attendance-form')?.addEventListener('submit', (event) => {
+        const form = event.currentTarget;
+        const employee = form.elements.MaNV;
+        const option = employee.options[employee.selectedIndex];
+        const action = event.submitter?.value === 'out' ? 'Chấm ra' : 'Chấm vào';
+        if (!employee.value || !window.confirm(`${action} cho nhân viên:\n${option.text}\n\nXác nhận thực hiện?`)) {
+            event.preventDefault();
+        }
+    });
+
+    document.querySelectorAll('.attendance-confirm').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            const panel = document.getElementById('face-attendance');
+            const name = panel?.dataset.employeeName || 'Tài khoản hiện tại';
+            const code = panel?.dataset.employeeCode || 'Không có mã nhân viên';
+            const action = form.dataset.actionLabel || 'Chấm công';
+            if (!window.confirm(`${action} cho:\n${name}\nMã nhân viên: ${code}\n\nXác nhận thực hiện?`)) {
+                event.preventDefault();
+            }
+        });
+    });
 
     const menu = document.querySelector('.menu-toggle');
     if (!menu) return;

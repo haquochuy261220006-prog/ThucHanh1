@@ -1,32 +1,100 @@
 {% extends "base.html" %}
 {% block title %}Hồ sơ điện tử · QLNS{% endblock %}
 {% block content %}
-<div class="page-heading">
-    <div>
-        <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span>
-        <h1>Hồ sơ điện tử</h1>
-        <p>{{ employee[1] }} · Mã {{ employee[2] }}. Tệp được mã hóa trước khi lưu trong cơ sở dữ liệu.</p>
-    </div>
-    <div class="heading-actions">{% if admin %}<a class="btn secondary" href="{{ url_for('employee_record_retention') }}">Rà hạn lưu</a>{% endif %}<a class="btn secondary" href="{{ url_for('employee_profile_audit', manv=employee[0]) }}">Nhật ký hồ sơ</a><a class="btn secondary" href="{{ url_for('module', key='nhanvien') if admin else url_for('chamcong') }}">Quay lại</a></div>
-</div>
-<div class="panel form-panel">
-    <div class="panel-head"><div><h2>Thêm tài liệu</h2><p>PDF, DOCX, JPEG hoặc PNG; tối đa 8 MB.</p></div></div>
-    <form method="post" enctype="multipart/form-data" class="data-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-grid">
-            <div class="field"><label for="LoaiTaiLieu">Loại tài liệu</label><select id="LoaiTaiLieu" name="LoaiTaiLieu" required><option value="">-- Chọn --</option>{% for kind in ('CCCD','Bằng cấp','Chứng chỉ','Quyết định','Hồ sơ cá nhân','Khác') %}<option>{{ kind }}</option>{% endfor %}</select></div>
-            <div class="field"><label for="record-file">Tệp</label><input id="record-file" type="file" name="file" accept=".pdf,.docx,.jpg,.jpeg,.png" required></div>
-            <div class="field"><label for="NgayHieuLuc">Ngày hiệu lực</label><input id="NgayHieuLuc" type="date" name="NgayHieuLuc"></div>
-            {% if admin %}<div class="field"><label for="HanLuuDen">Hạn lưu tài liệu</label><input id="HanLuuDen" type="date" name="HanLuuDen"><small>Ngày quá hạn chỉ được cảnh báo; hệ thống không tự xóa.</small></div>{% endif %}
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow blue">HỒ SƠ NHÂN VIÊN</span>
+            <h1>Hồ sơ điện tử</h1>
+            <p>{{ employee[1] }} · Mã {{ employee[2] }}. Tệp được mã hóa trước khi lưu trong cơ sở dữ liệu.</p>
         </div>
-        <div class="form-actions"><button class="btn primary">Mã hóa và lưu tài liệu</button></div>
-    </form>
-</div>
-<div class="panel">
-    <div class="panel-head"><div><h2>Tài liệu đã lưu</h2><p>{{ documents|length }} tệp</p></div></div>
-    <div class="table-wrap"><table><thead><tr><th>Loại</th><th>Tên tệp</th><th>Ngày hiệu lực</th><th>Hạn lưu</th><th>Người tải</th><th>Thời điểm lưu</th><th></th></tr></thead><tbody>
-        {% for document in documents %}<tr><td>{{ document[1] }}</td><td>{{ document[2] }}</td><td>{{ document[4] or '—' }}</td><td>{% if document[5] and document[5] < today %}<span class="status-pill">Quá hạn lưu</span>{% else %}{{ document[5] or 'Chưa đặt' }}{% endif %}</td><td>{{ document[6] }}</td><td>{{ document[7] }}</td><td><a class="action-link" href="{{ url_for('download_employee_record',ma_tep=document[0]) }}">Tải xuống</a></td></tr>
-        {% else %}<tr><td class="empty" colspan="7">Chưa có tài liệu.</td></tr>{% endfor %}
-    </tbody></table></div>
+        <div class="heading-actions">{% if admin %}<a class="btn secondary"
+                                                      href="{{ url_for('employee_record_retention') }}">Rà hạn lưu</a>{% endif %}<a class="btn secondary"
+                                                                                                                                    href="{{ url_for('employee_profile_audit', manv=employee[0]) }}">Nhật ký hồ sơ</a><a class="btn secondary"
+                                                                                                                                                                                                                         href="{{ url_for('module', key='nhanvien') if admin else url_for('chamcong') }}">Quay lại</a></div>
+    </div>
+    <div class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Thông tin hồ sơ nhân viên</h2>
+                <p>Mã nhân viên: {{ profile.MaNVHT }} · Chức vụ và phòng ban được quản lý riêng.</p>
+            </div>
+        </div>
+        {% if can_edit_profile %}
+        <form method="post" enctype="multipart/form-data" class="data-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="profile_update">
+            <div class="form-grid">
+                <div class="field"><label for="HoTen">Họ tên *</label><input id="HoTen" name="HoTen" value="{{ profile.HoTen }}" maxlength="100" required></div>
+                <div class="field"><label for="NgaySinh">Ngày sinh</label><input id="NgaySinh" name="NgaySinh" type="date" value="{{ profile.NgaySinh.isoformat() if profile.NgaySinh else '' }}"></div>
+                <div class="field"><label for="GioiTinh">Giới tính</label><select id="GioiTinh" name="GioiTinh"><option value="">-- Chọn --</option>{% for gender in ('Nam','Nữ','Khác') %}<option value="{{ gender }}"{% if profile.GioiTinh==gender %} selected{% endif %}>{{ gender }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="SDT">Số điện thoại</label><input id="SDT" name="SDT" type="tel" value="{{ profile.SDT or '' }}" maxlength="20"></div>
+                <div class="field"><label for="Email">Email</label><input id="Email" name="Email" type="email" value="{{ profile.Email or '' }}" maxlength="100"></div>
+                <div class="field"><label for="CCCD">CCCD</label><input id="CCCD" name="CCCD" value="{{ profile.CCCD or '' }}" maxlength="20" inputmode="numeric"></div>
+                <div class="field"><label for="DiaChi">Địa chỉ</label><input id="DiaChi" name="DiaChi" value="{{ profile.DiaChi or '' }}" maxlength="255"></div>
+                <div class="field"><label for="AnhHoSo">Ảnh hồ sơ chấm công</label><input id="AnhHoSo" name="AnhHoSo" type="file" accept="image/jpeg,image/png,image/webp"><small>Ảnh JPEG, PNG hoặc WEBP, tối đa 5 MB. Thay ảnh sẽ yêu cầu đăng ký lại khuôn mặt.</small></div>
+            </div>
+            <div class="form-actions"><button class="btn primary" type="submit">Lưu hồ sơ nhân viên</button></div>
+        </form>
+        {% else %}
+        <div class="data-form"><p>Thông tin cá nhân chỉ quản trị viên được xem và cập nhật.</p></div>
+        {% endif %}
+    </div>
+    <div class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Thêm tài liệu</h2>
+                <p>PDF, DOCX, JPEG hoặc PNG; tối đa 8 MB.</p>
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="data-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div class="field"><label for="LoaiTaiLieu">Loại tài liệu</label><select id="LoaiTaiLieu" name="LoaiTaiLieu" required><option value="">-- Chọn --</option>{% for kind in ('CCCD','Bằng cấp','Chứng chỉ','Quyết định','Hồ sơ cá nhân','Khác') %}<option>{{ kind }}</option>{% endfor %}</select></div>
+                <div class="field">
+                    <label for="record-file">Tệp</label><input id="record-file"
+                                                               type="file"
+                                                               name="file"
+                                                               accept=".pdf,.docx,.jpg,.jpeg,.png"
+                                                               required>
+                </div>
+                <div class="field">
+                    <label for="NgayHieuLuc">Ngày hiệu lực</label><input id="NgayHieuLuc"
+                                                                         type="date"
+                                                                         name="NgayHieuLuc">
+                </div>
+                {% if admin %}<div class="field"><label for="HanLuuDen">Hạn lưu tài liệu</label><input id="HanLuuDen" type="date" name="HanLuuDen"><small>Ngày quá hạn chỉ được cảnh báo; hệ thống không tự xóa.</small></div>{% endif %}
+            </div>
+            <div class="form-actions">
+                <button class="btn primary">Mã hóa và lưu tài liệu</button>
+            </div>
+        </form>
+    </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Tài liệu đã lưu</h2>
+                <p>{{ documents|length }} tệp</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loại</th>
+                        <th>Tên tệp</th>
+                        <th>Ngày hiệu lực</th>
+                        <th>Hạn lưu</th>
+                        <th>Người tải</th>
+                        <th>Thời điểm lưu</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}<tr><td>{{ document[1] }}</td><td>{{ document[2] }}</td><td>{{ document[4] or '—' }}</td><td>{% if document[5] and document[5] < today %}<span class="status-pill">Quá hạn lưu</span>{% else %}{{ document[5] or 'Chưa đặt' }}{% endif %}</td><td>{{ document[6] }}</td><td>{{ document[7] }}</td><td><a class="action-link"
+                                                                                                                                                                                                                                                                                                                                                            href="{{ url_for('download_employee_record',ma_tep=document[0]) }}">Tải xuống</a></td></tr>
+                {% else %}<tr><td class="empty" colspan="7">Chưa có tài liệu.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

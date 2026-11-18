@@ -1,4 +1,4 @@
-﻿"""Server-side role and action permissions for the HR application."""
+"""Server-side role and action permissions for the HR application."""
 
 ROLE_LABELS = {
     "QuanTri": "Quản trị viên (tương thích cũ)",
@@ -10,32 +10,59 @@ ROLE_LABELS = {
 }
 
 ROLE_PERMISSIONS = {
-    # Existing administrator accounts retain their previous full access.
     "QuanTri": {"*"},
     "QuanTriHeThong": {"accounts.manage", "accounts.export", "roles.assign", "system.configure"},
     "HR": {
-        "employees.view", "employees.create", "employees.edit", "employees.delete",
-        "employees.export", "employees.view_cccd", "employees.view_salary",
-        "organization.manage", "contracts.view", "contracts.create", "contracts.edit",
-        "contracts.approve", "contracts.delete", "contracts.export",
-        "recruitment.view", "recruitment.create", "recruitment.edit", "recruitment.approve",
-        "recruitment.delete", "recruitment.export", "onboarding.manage", "assets.export",
-        "leave.export_all", "records.view_all",
-        "records.manage", "records.export", "profile_fields.manage", "training.manage",
-        "benefits.manage", "headcount.manage", "leave.view_all", "leave.manage_policy",
-        "leave.manage_quota", "leave.manage_schedule", "leave.approve_hr", "reports.hr",
-        "audit.view", "kpi.manage", "kpi.view_all", "kpi.approve",
+        "employees.view",
+        "employees.create",
+        "employees.edit",
+        "employees.delete",
+        "employees.export",
+        "employees.view_cccd",
+        "employees.view_salary",
+        "organization.manage",
+        "contracts.view",
+        "contracts.create",
+        "contracts.edit",
+        "contracts.approve",
+        "contracts.delete",
+        "contracts.export",
+        "leave.export_all",
+        "records.view_all",
+        "records.manage",
+        "records.export",
+        "leave.view_all",
+        "leave.manage_policy",
+        "leave.manage_quota",
+        "leave.manage_schedule",
+        "leave.approve_hr",
+        "reports.hr",
+        "audit.view",
     },
     "KeToan": {
-        "payroll.view", "payroll.calculate", "payroll.edit", "payroll.approve",
-        "payroll.lock", "payroll.reopen", "payroll.delete", "payroll.export",
+        "payroll.view",
+        "payroll.calculate",
+        "payroll.edit",
+        "payroll.approve",
+        "payroll.lock",
+        "payroll.reopen",
+        "payroll.delete",
+        "payroll.export",
         "payroll.view_salary_field",
     },
     "QuanLy": {
-        "employees.team_view", "leave.view_team", "leave.approve_manager", "leave.export_team",
-        "kpi.view_team", "kpi.manager_review",
+        "employees.team_view",
+        "leave.view_team",
+        "leave.approve_manager",
+        "leave.export_team",
     },
-    "NhanVien": {"self.attendance", "self.attendance_export", "self.leave", "self.payroll", "self.profile", "self.training", "self.benefits", "self.kpi"},
+    "NhanVien": {
+        "self.attendance",
+        "self.attendance_export",
+        "self.leave",
+        "self.payroll",
+        "self.profile",
+    },
 }
 
 MODULE_PERMISSIONS = {
@@ -63,5 +90,3 @@ def module_permission(key, action="view"):
     if area == "organization":
         return "organization.manage"
     return f"{area}.{action_name}"
-
-

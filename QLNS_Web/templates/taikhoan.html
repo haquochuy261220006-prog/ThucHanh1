@@ -25,25 +25,25 @@
                     <select name="MaNV" id="MaNV" required>
                         <option value="">-- Chọn nhân viên --</option>
                         {% for p in people %}<option value="{{ p[0] }}"
-        data-email="{{ p[3] or '' }}"
-        data-phone="{{ p[4] or '' }}">{{ p[1] }} ({{ p[2] }})</option>{% endfor %}
+                                                     data-email="{{ p[3] or '' }}"
+                                                     data-phone="{{ p[4] or '' }}">{{ p[1] }} ({{ p[2] }})</option>{% endfor %}
                     </select>
                 </div>
                 <div class="field">
                     <label>Tên đăng nhập *</label><input name="username"
-       required
-       maxlength="30"
-       autocomplete="off"
-       placeholder="Ví dụ: nv01">
+                                                         required
+                                                         maxlength="30"
+                                                         autocomplete="off"
+                                                         placeholder="Ví dụ: nv01">
                 </div>
                 <div class="field">
                     <label>Mật khẩu *</label><input type="password"
-       name="password"
-       required
-       minlength="10"
-       maxlength="256"
-       autocomplete="new-password"
-       placeholder="Từ 10 đến 256 ký tự">
+                                                    name="password"
+                                                    required
+                                                    minlength="10"
+                                                    maxlength="256"
+                                                    autocomplete="new-password"
+                                                    placeholder="Từ 10 đến 256 ký tự">
                 </div>
                 <div class="field">
                     <label>Vai trò *</label>
@@ -56,8 +56,7 @@
                         <option value="email">Gmail / Email nhân viên</option>
                         <option value="sms">Số điện thoại nhân viên (SMS)</option>
                     </select>
-                    <small id="otp-recipient"
-                           aria-live="polite">Chọn nhân viên để xem địa chỉ nhận mã.</small>
+                    <small id="otp-recipient" aria-live="polite">Chọn nhân viên để xem địa chỉ nhận mã.</small>
                 </div>
                 <div class="field">
                     <label>Mã xác nhận *</label>
@@ -87,22 +86,45 @@
         </div>
         <div class="table-wrap"><table><thead><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}<th>Thao tác</th></tr></thead><tbody>
             {% for row in rows %}<tr>{% for v in row %}<td>{{ v if v is not none else '—' }}</td>{% endfor %}<td class="actions">
-{% if row[0] != current_username %}
-<details><summary class="action-link">Sửa</summary><form method="post" class="data-form">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="edit"><input type="hidden" name="username" value="{{ row[0] }}">
-<label>Tên đăng nhập <input name="new_username" value="{{ row[0] }}" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]{3,30}"></label>
-<label>Vai trò <select name="role" required>{% for role,label in role_options %}<option value="{{ role }}" {% if account_roles.get(row[0]) == role %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-<label>Mật khẩu mới (để trống nếu không đổi) <input type="password" name="password" minlength="10" maxlength="256" autocomplete="new-password"></label>
-<button class="btn secondary" type="submit">Lưu</button></form></details>
-<form method="post" onsubmit="return confirm('Xóa tài khoản này?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ row[0] }}"><button type="submit" class="action-link danger-link">Xóa</button></form>
-{% endif %}</td></tr>
-{% else %}<tr><td colspan="{{ cols|length+1 }}"
-    class="empty">Chưa có tài khoản.</td></tr>{% endfor %}
-        </tbody>
-        </table>
+                {% if row[0] != current_username %}
+                    <details>
+                        <summary class="action-link">Sửa</summary>
+                        <form method="post" class="data-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="edit"><input type="hidden" name="username" value="{{ row[0] }}">
+                            <label>
+                                Tên đăng nhập
+                                <input name="new_username"
+                                       value="{{ row[0] }}"
+                                       required
+                                       minlength="3"
+                                       maxlength="30"
+                                       pattern="[A-Za-z0-9_.]{3,30}">
+                            </label>
+                            <label>Vai trò <select name="role" required>{% for role,label in role_options %}<option value="{{ role }}"
+                                                                                                                    {% if account_roles.get(row[0]) == role %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                            <label>
+                                Mật khẩu mới (để trống nếu không đổi)
+                                <input type="password"
+                                       name="password"
+                                       minlength="10"
+                                       maxlength="256"
+                                       autocomplete="new-password">
+                            </label>
+                            <button class="btn secondary" type="submit">Lưu</button>
+                        </form>
+                    </details>
+                    <form method="post" onsubmit="return confirm('Xóa tài khoản này?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ row[0] }}"><button type="submit" class="action-link danger-link">Xóa</button>
+                    </form>
+                {% endif %}
+                </td>
+                </tr>
+{% else %}<tr><td colspan="{{ cols|length+1 }}" class="empty">Chưa có tài khoản.</td></tr>{% endfor %}
+</tbody>
+</table>
     </div>
-</div>
-<script>
+    </div>
+    <script>
     document.getElementById('send-otp').addEventListener('click', async function() {
         const employee = document.getElementById('MaNV').value;
         const status = document.getElementById('otp-status');
@@ -147,5 +169,5 @@
     document.getElementById('MaNV').addEventListener('change', updateOtpRecipient);
     document.getElementById('otp-channel').addEventListener('change', updateOtpRecipient);
     updateOtpRecipient();
-</script>
+    </script>
 {% endblock %}

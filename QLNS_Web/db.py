@@ -7,14 +7,23 @@ def _run(sql, params, fetch):
     conn = pyodbc.connect(conn_str())
     try:
         cur = conn.cursor()
-        cur.execute(sql, params)
+        cur.execute(sql, *(params or ()))
         if fetch:
-            cols = [d[0] for d in cur.description]
-            res = (cols, [list(r) for r in cur.fetchall()])
+            # SQL Server có thể trả về result set trung gian cho SET/DML trước SELECT.
+            while cur.description is None and cur.nextset():
+                pass
+            if cur.description is None:
+                res = ([], [])
+            else:
+                cols = [d[0] for d in cur.description]
+                res = (cols, [list(r) for r in cur.fetchall()])
         else:
             res = cur.rowcount
         conn.commit()
         return res
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -38,6 +47,9 @@ def execute_batches(batches):
             if params:
                 cur.executemany(sql, params)
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

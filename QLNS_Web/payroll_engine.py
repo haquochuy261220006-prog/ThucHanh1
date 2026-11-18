@@ -67,7 +67,11 @@ def validate_policy(policy):
         for field, value in (("minimum_base", minimum), ("maximum_base", maximum)):
             if value is not None and Decimal(str(value)) < 0:
                 raise ValueError(f"insurance.limits.{name}.{field} không được âm.")
-        if minimum is not None and maximum is not None and Decimal(str(minimum)) > Decimal(str(maximum)):
+        if (
+            minimum is not None
+            and maximum is not None
+            and Decimal(str(minimum)) > Decimal(str(maximum))
+        ):
             raise ValueError(f"Căn cứ tối thiểu của {name} không được lớn hơn tối đa.")
     for key in ("base_salary_taxable", "base_salary_insurable"):
         if key not in policy or not isinstance(policy[key], bool):
@@ -87,7 +91,9 @@ def validate_policy(policy):
         raise ValueError("Thiếu mục components trong chính sách.")
     for name in required_components:
         flags = components.get(name)
-        if not isinstance(flags, dict) or not all(isinstance(flags.get(key), bool) for key in ("taxable", "insurable")):
+        if not isinstance(flags, dict) or not all(
+            isinstance(flags.get(key), bool) for key in ("taxable", "insurable")
+        ):
             raise ValueError(f"Cần cấu hình cờ taxable/insurable cho components.{name}.")
     return policy
 
@@ -125,9 +131,24 @@ def _progressive_tax(taxable_income, brackets):
     return _money(tax)
 
 
+def _bounded_base(base, limits):
+    """Giới hạn căn cứ đóng bảo hiểm trong khoảng tối thiểu/tối đa của từng loại."""
+    if limits["minimum_base"] is not None:
+        base = max(base, Decimal(str(limits["minimum_base"])))
+    if limits["maximum_base"] is not None:
+        base = min(base, Decimal(str(limits["maximum_base"])))
+    return base
+
+
 def calculate_statutory_payroll(
-    *, base_salary, items, policy, tax_resident, dependents,
-    insurance_subject, insurance_base=None,
+    *,
+    base_salary,
+    items,
+    policy,
+    tax_resident,
+    dependents,
+    insurance_subject,
+    insurance_base=None,
 ):
     """Calculate transparent employee/employer contributions and resident PIT.
 
@@ -171,25 +192,19 @@ def calculate_statutory_payroll(
     employer_contributions = {}
     insurance_bases = {}
     if insurance_subject:
-        contribution_base = Decimal(str(insurance_base)) if insurance_base is not None else base_salary_insurable + insurable_items
-        for name, rate in insurance["employee_rates"].items():
-            limits = insurance["limits"][name]
-            category_base = contribution_base
-            if limits["minimum_base"] is not None:
-                category_base = max(category_base, Decimal(str(limits["minimum_base"])))
-            if limits["maximum_base"] is not None:
-                category_base = min(category_base, Decimal(str(limits["maximum_base"])))
-            insurance_bases[name] = _money(category_base)
-            employee_contributions[name] = _money(category_base * Decimal(str(rate)))
-        for name, rate in insurance["employer_rates"].items():
-            limits = insurance["limits"][name]
-            category_base = contribution_base
-            if limits["minimum_base"] is not None:
-                category_base = max(category_base, Decimal(str(limits["minimum_base"])))
-            if limits["maximum_base"] is not None:
-                category_base = min(category_base, Decimal(str(limits["maximum_base"])))
-            insurance_bases[name] = _money(category_base)
-            employer_contributions[name] = _money(category_base * Decimal(str(rate)))
+        contribution_base = (
+            Decimal(str(insurance_base))
+            if insurance_base is not None
+            else base_salary_insurable + insurable_items
+        )
+        for party, contributions in (
+            ("employee_rates", employee_contributions),
+            ("employer_rates", employer_contributions),
+        ):
+            for name, rate in insurance[party].items():
+                category_base = _bounded_base(contribution_base, insurance["limits"][name])
+                insurance_bases[name] = _money(category_base)
+                contributions[name] = _money(category_base * Decimal(str(rate)))
 
     tax_base = base_salary_taxable + taxable_items
     if policy["tax"]["employee_contributions_reduce_taxable_base"]:
@@ -214,8 +229,12 @@ def calculate_statutory_payroll(
         "gross": _money(gross),
         "taxable_income": _money(max(Decimal("0"), tax_base)),
         "personal_income_tax": personal_income_tax,
-        "employee_contributions": {key: _money(value) for key, value in employee_contributions.items()},
-        "employer_contributions": {key: _money(value) for key, value in employer_contributions.items()},
+        "employee_contributions": {
+            key: _money(value) for key, value in employee_contributions.items()
+        },
+        "employer_contributions": {
+            key: _money(value) for key, value in employer_contributions.items()
+        },
         "employee_contributions_total": _money(employee_insurance_total),
         "employer_contributions_total": _money(employer_insurance_total),
         "other_deductions": _money(other_payroll_deductions),

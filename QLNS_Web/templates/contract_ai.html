@@ -8,12 +8,18 @@
         </div>
         <div class="actions">
             <span class="ai-badge {{'' if ai_on else 'off'}}">{{'AI đang bật · '+model if ai_on else 'Chưa có API key · dùng mẫu chuẩn'}}</span><a class="btn secondary" href="{{ url_for('module',key='hopdong') }}">←　Về Hợp đồng</a>
-            <a class="btn secondary"
-               href="{{ url_for('contracts.ai_test') }}">⚡　Kiểm tra kết nối AI</a>
+            <a class="btn secondary" href="{{ url_for('contracts.ai_test') }}">⚡　Kiểm tra kết nối AI</a>
         </div>
     </div>
     {% if not company_ok %}<div class="flash error">Chưa khai báo thông tin công ty trong <b>config.py</b> (mục COMPANY).</div>{% endif %}
-    <div class="panel"><div class="panel-head"><div><h2>Bản nháp cần được kiểm tra</h2><p>Nội dung do AI hỗ trợ chỉ là dự thảo. Lưu hoặc tải DOCX/PDF không đánh dấu hợp đồng đã duyệt hay đã ký; HR/pháp chế phải kiểm tra, người có thẩm quyền duyệt và tải lên bản chính thức đã ký trong mục Vòng đời hợp đồng.</p></div></div></div>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Bản nháp cần được kiểm tra</h2>
+                <p>Nội dung do AI hỗ trợ chỉ là dự thảo. Lưu hoặc tải DOCX/PDF không đánh dấu hợp đồng đã duyệt hay đã ký; HR/pháp chế phải kiểm tra, người có thẩm quyền duyệt và tải lên bản chính thức đã ký trong mục Vòng đời hợp đồng.</p>
+            </div>
+        </div>
+    </div>
     <form method="post" action="{{ url_for('contracts.soan') }}" class="panel">
         <div class="panel-head">
             <div>
@@ -35,21 +41,21 @@
                     <label>Nguồn thông tin</label>
                     <div class="checks">
                         <label><input type="radio"
-       name="mode"
-       value="moi"
-       {% if mode=='moi' %}checked{% endif %}
-       onchange="modeSwitch()"> Soạn mới (chọn nhân viên + loại hợp đồng)</label>
+                                      name="mode"
+                                      value="moi"
+                                      {% if mode=='moi' %}checked{% endif %}
+                                      onchange="modeSwitch()"> Soạn mới (chọn nhân viên + loại hợp đồng)</label>
                         <label><input type="radio"
-       name="mode"
-       value="co"
-       {% if mode!='moi' %}checked{% endif %}
-       onchange="modeSwitch()"> Dùng hợp đồng đã có trong hệ thống ({{ contracts|length }})</label>
+                                      name="mode"
+                                      value="co"
+                                      {% if mode!='moi' %}checked{% endif %}
+                                      onchange="modeSwitch()"> Dùng hợp đồng đã có trong hệ thống ({{ contracts|length }})</label>
                     </div>
                 </div>
                 <div class="field wide">
                     <label>Hợp đồng mẫu tham khảo</label>
                     <select name="template_id"><option value="">Không dùng hợp đồng mẫu</option>{% for sample in templates %}<option value="{{ sample[0] }}"
-        {% if selected_template_id|string==sample[0]|string %}selected{% endif %}>{{ sample[1] }} · {{ sample[2] }}</option>{% endfor %}</select>
+                                                                                                                                     {% if selected_template_id|string==sample[0]|string %}selected{% endif %}>{{ sample[1] }} · {{ sample[2] }}</option>{% endfor %}</select>
                     <small>AI tham khảo cấu trúc và điều khoản trong mẫu, còn thông tin người lao động lấy từ hồ sơ nhân viên. Nội dung tệp mẫu được gửi tới nhà cung cấp AI đang cấu hình. File Word xuất ra dùng định dạng chuẩn của hệ thống, không giữ nguyên thiết kế của mẫu.</small>
                     {% if not templates %}<small>Chưa có mẫu. Hãy tải .docx lên tại khu vực Hợp đồng.</small>{% endif %}
                 </div>
@@ -62,8 +68,8 @@
                         <select name="manv" id="manv" onchange="fillLuong()">
                             <option value="">-- Chọn nhân viên --</option>
                             {% for e in employees %}<option value="{{ e[0] }}"
-        data-luong="{{ '%d'|format(e[3] or 0) }}"
-        {% if form.manv|string==e[0]|string %}selected{% endif %}>NV{{ e[0] }} · {{ e[1] }}{% if e[2] %} · {{ e[2] }}{% endif %}</option>{% endfor %}
+                                                            data-luong="{{ '%d'|format(e[3] or 0) }}"
+                                                            {% if form.manv|string==e[0]|string %}selected{% endif %}>NV{{ e[0] }} · {{ e[1] }}{% if e[2] %} · {{ e[2] }}{% endif %}</option>{% endfor %}
                         </select>
                         {% if not employees %}<small style="color:var(--muted)">Chưa có nhân viên đang làm. Hãy thêm nhân viên ở mục Nhân viên trước.</small>{% endif %}
                     </div>
@@ -71,24 +77,24 @@
                         <label>Loại hợp đồng *</label>
                         <select name="loai" id="loai">
                             {% for t in types %}<option value="{{ t }}"
-        {% if form.loai==t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+                                                        {% if form.loai==t %}selected{% endif %}>{{ t }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="field">
-                        <label>Ngày bắt đầu</label><input type="date"
-       name="ngay_bd"
-       value="{{ form.ngay_bd }}">
+                        <label>Ngày bắt đầu</label><input type="date" name="ngay_bd" value="{{ form.ngay_bd }}">
                     </div>
                     <div class="field">
-                        <label>Ngày kết thúc <small>(bỏ trống nếu không thời hạn)</small></label><input type="date" name="ngay_kt" value="{{ form.ngay_kt }}">
+                        <label>Ngày kết thúc <small>(bỏ trống nếu không thời hạn)</small></label><input type="date"
+                                                                                                        name="ngay_kt"
+                                                                                                        value="{{ form.ngay_kt }}">
                     </div>
                     <div class="field wide">
                         <label>Lương / thù lao (đồng/tháng)</label><input type="number"
-       min="0"
-       name="luong"
-       id="luong"
-       value="{{ form.luong }}"
-       placeholder="Tự điền theo lương cơ bản của nhân viên, có thể sửa">
+                                                                          min="0"
+                                                                          name="luong"
+                                                                          id="luong"
+                                                                          value="{{ form.luong }}"
+                                                                          placeholder="Tự điền theo lương cơ bản của nhân viên, có thể sửa">
                     </div>
                 </div>
                 <div id="mode-co" class="field wide">
@@ -107,18 +113,18 @@
                 </div>
                 <div class="field">
                     <label>Giờ làm việc</label><input name="gio_lam"
-       value="{{ opts.gio_lam or '' }}"
-       placeholder="VD: 8h30–17h30, thứ Hai–thứ Sáu">
+                                                      value="{{ opts.gio_lam or '' }}"
+                                                      placeholder="VD: 8h30–17h30, thứ Hai–thứ Sáu">
                 </div>
                 <div class="field wide">
                     <label>Địa điểm làm việc</label><input name="dia_diem"
-       value="{{ opts.dia_diem or '' }}"
-       placeholder="Để trống = địa chỉ công ty">
+                                                           value="{{ opts.dia_diem or '' }}"
+                                                           placeholder="Để trống = địa chỉ công ty">
                 </div>
                 <div class="field wide">
                     <label>Phụ cấp / chế độ khác</label><input name="phu_cap"
-       value="{{ opts.phu_cap or '' }}"
-       placeholder="VD: phụ cấp ăn trưa 730.000 đ/tháng, phụ cấp xăng xe 500.000 đ/tháng">
+                                                               value="{{ opts.phu_cap or '' }}"
+                                                               placeholder="VD: phụ cấp ăn trưa 730.000 đ/tháng, phụ cấp xăng xe 500.000 đ/tháng">
                 </div>
                 <div class="field wide">
                     <label>Yêu cầu bổ sung cho AI</label>
@@ -128,11 +134,11 @@
                 </div>
                 <div class="field wide checks">
                     <label><input type="checkbox"
-       name="bao_mat"
-       {% if opts.bao_mat %}checked{% endif %}> Điều khoản bảo mật thông tin</label>
+                                  name="bao_mat"
+                                  {% if opts.bao_mat %}checked{% endif %}> Điều khoản bảo mật thông tin</label>
                     <label><input type="checkbox"
-       name="so_huu_tri_tue"
-       {% if opts.so_huu_tri_tue %}checked{% endif %}> Điều khoản sở hữu trí tuệ</label>
+                                  name="so_huu_tri_tue"
+                                  {% if opts.so_huu_tri_tue %}checked{% endif %}> Điều khoản sở hữu trí tuệ</label>
                     {% if web_ok %}<label><input type="checkbox" name="web" {% if opts.web %}checked{% endif %}> 🌐 Cho AI tra cứu web để cập nhật quy định mới nhất (chậm hơn 10–30 giây)</label>{% endif %}
                 </div>
             </div>
@@ -204,7 +210,7 @@
                 <div class="form-grid" style="margin-top:18px">
                     <div class="field">
                         <label for="output-format">Định dạng tải xuống</label><select id="output-format"
-        name="output_format">
+                                                                                      name="output_format">
                             <option value="docx">Word (.docx)</option>
                             <option value="pdf">PDF (.pdf)</option>
                         </select>
@@ -212,20 +218,25 @@
                 </div>
                 <div class="form-actions">
                     {% if ai_on %}<button class="btn secondary"
-        name="action"
-        value="revise">✎　AI chỉnh sửa theo yêu cầu</button>{% endif %}
+                                          name="action"
+                                          value="revise">✎　AI chỉnh sửa theo yêu cầu</button>{% endif %}
                     <label style="display:flex;
-              align-items:center;
-              gap:8px;
-              font-size:12px;
-              font-weight:600;
-              margin-right:auto"><input type="checkbox" name="luu" id="luu"> Lưu thông tin và tệp hợp đồng trong hệ thống</label>
+                                  align-items:center;
+                                  gap:8px;
+                                  font-size:12px;
+                                  font-weight:600;
+                                  margin-right:auto">
+                        <input type="checkbox" name="luu" id="luu">
+                        Lưu thông tin và tệp hợp đồng trong hệ thống
+                    </label>
                     <button class="btn primary"
                             name="action"
                             value="download"
                             onclick="setTimeout(function(){var l=document.getElementById('luu');if(l)l.checked=false},400)">↓　Tải hợp đồng</button>
                 </div>
-                <p style="font-size:11px; color:var(--muted); margin:14px 0 0">⚠ Nội dung do AI soạn chỉ là bản nháp. Cần bộ phận nhân sự/pháp chế rà soát trước khi ký.</p>
+                <p style="font-size:11px;
+                          color:var(--muted);
+                          margin:14px 0 0">⚠ Nội dung do AI soạn chỉ là bản nháp. Cần bộ phận nhân sự/pháp chế rà soát trước khi ký.</p>
             </div>
         {% endif %}
     </form>

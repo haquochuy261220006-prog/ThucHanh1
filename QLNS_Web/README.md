@@ -4,7 +4,7 @@ Bản giao diện web chuyển từ ứng dụng Python/Tkinter sang Flask, ti�
 
 ## 1. Yêu cầu
 - Windows 10/11
-- Python 3.10 trở lên
+- Python 3.12 trở lên (mã nguồn dùng f-string lồng dấu nháy, chỉ hợp lệ từ Python 3.12)
 - Microsoft ODBC Driver 17 hoặc 18 for SQL Server
 - SQL Server Express/SQL Server đã chạy và có database `NHANSU_PY` cùng các bảng của dự án
 
@@ -16,7 +16,7 @@ Mở `config.py` và chỉnh `SERVER` đúng với tên instance trên máy. Ví
 
 `DATABASE` mặc định là `NHANSU_PY`. Windows Authentication đang bật (`WINDOWS_AUTH = True`), nên tài khoản Windows chạy Flask cần quyền truy cập database. Không đưa ứng dụng ra Internet khi đang dùng cấu hình thử nghiệm. Đặt `FLASK_SECRET_KEY` để giữ phiên đăng nhập ổn định giữa các lần khởi động; nếu chưa đặt, ứng dụng tạo khóa ngẫu nhiên và người dùng cần đăng nhập lại sau khi khởi động lại.
 
-Khi triển khai production, đặt `APP_ENV=production` và cung cấp `FLASK_SECRET_KEY` mạnh, ổn định; ứng dụng sẽ không khởi động nếu thiếu khóa này và sẽ bật cờ `Secure` cho cookie phiên. Hãy chạy sau HTTPS. `SESSION_COOKIE_SECURE=1` có thể bật cờ này rõ ràng trong các môi trường HTTPS chưa đặt `APP_ENV=production`.
+Hồ sơ nhân viên được tạo qua employee_profiles.create_employee() với mã gửi lại an toàn để một yêu cầu không tạo trùng hồ sơ.
 
 ## 3. Cài đặt và chạy
 Mở terminal VS Code tại thư mục này:
@@ -55,53 +55,24 @@ $env:TWILIO_FROM = "+1..."
 python app.py
 ```
 
-## Quét giấy tờ nhân viên (OCR)
-Trong trang **Nhân viên**, chọn **Quét giấy tờ nhân viên** để tải ảnh/PDF CCCD hoặc CV/sơ yếu lý lịch. OCR chạy cục bộ trên máy chủ; kết quả tự nhận dạng loại tài liệu và một số trường thông tin, sau đó mở form hồ sơ để người dùng kiểm tra và bổ sung trước khi lưu. Tệp tải lên không được lưu vào database.
+## 4. Tám phân hệ được giữ lại
 
-Cài gói Python bằng `python -m pip install -r requirements.txt`, đồng thời cài **Tesseract OCR** trên máy chạy Flask và cài dữ liệu ngôn ngữ tiếng Việt (`vie`) cùng tiếng Anh (`eng`). Đảm bảo lệnh `tesseract` có trong `PATH`; nếu chưa có, đặt biến môi trường `TESSERACT_CMD` trỏ tới `tesseract.exe` và cấu hình chương trình dùng biến này. Tính năng nhận ảnh PNG/JPG/TIFF/BMP và PDF tối đa 5 trang, 10 MB. Cần kiểm tra thủ công mọi trường OCR trước khi lưu vì ảnh mờ, nghiêng hoặc chữ nhỏ có thể nhận sai.
+1. **Dashboard** — tổng quan số liệu nhân sự cần thiết.
+2. **Nhân viên** — hồ sơ chuẩn theo MaNV, CRUD, tìm kiếm/lọc, lịch sử công tác và tài liệu hồ sơ.
+3. **Phòng ban/chức vụ** — đơn vị, phòng ban, vị trí công việc, chức danh và sơ đồ tổ chức.
+4. **Chấm công** — ghi nhận vào/ra, đối soát lịch sử, ca và tăng ca; quản trị viên quản lý dữ liệu theo quyền.
+5. **Nghỉ phép** — gửi/duyệt đơn, kiểm tra trùng ngày và theo dõi quỹ phép.
+6. **Hợp đồng** — mẫu, trích xuất tệp, soạn nháp bằng AI, vòng đời và tải DOCX/PDF.
+7. **Tiền lương** — tính theo dữ liệu nhân viên, công, nghỉ và tăng ca; quy trình kiểm tra, duyệt, khóa kỳ và phiếu lương.
+8. **Báo cáo** — lọc theo kỳ, biểu đồ và xuất danh sách theo định dạng hỗ trợ.
 
-## 4. Tính năng trong bản web
-- Đăng nhập/đăng xuất và đổi mật khẩu
-- Tổng quan nhân sự
-- Quản lý nhân viên, phòng ban, chức vụ, hợp đồng (thêm/sửa/xóa/tìm kiếm/xuất CSV, Excel hoặc PDF)
-- Chấm công vào/ra
-- Quản trị viên lọc, sửa trạng thái và xuất chấm công theo ngày; nhân viên chỉ xem dữ liệu của mình
-- Chấm công bằng nhận diện khuôn mặt (đăng ký có xác nhận đồng ý, xử lý ảnh trong trình duyệt, lưu mẫu đặc trưng trong SQL Server; cần Internet để tải thư viện và mô hình nhận diện từ jsDelivr)
-- Gửi và duyệt đơn nghỉ phép
-- Đơn nghỉ trùng khoảng ngày bị từ chối; số ngày nghỉ tính theo lịch làm việc cấu hình (hiện không tính Chủ nhật)
-- Xem bảng lương, điều chỉnh mức thưởng chung theo tháng, lương cơ bản riêng và thưởng thêm; các thay đổi yêu cầu lý do và được ghi nhật ký; báo cáo tiến độ ngày công đếm sự kiện chấm vào hợp lệ, đồng thời hiển thị tổng giờ từ các cặp vào/ra hoàn tất để đối soát (không tự dùng giờ này để tính lương)
-- Xuất danh sách chấm công, nghỉ phép, lương, báo cáo, điều chuyển và tài khoản theo định dạng CSV, Excel hoặc PDF
-- **Quản lý hợp đồng mẫu, soạn hợp đồng bằng AI, xuất DOCX/PDF và lưu/tải lại các phiên bản đã tạo** (trong mục Hợp đồng)
-
-Lưu ý: tạo tài khoản nhân viên qua giao diện (có OTP) đã được triển khai ở trang **Tài khoản**; bản web chưa thay thế đầy đủ tính năng tính lương nâng cao của ứng dụng desktop. Hãy thử trên bản sao database trước.
+Đăng nhập, phân quyền, tài khoản, nhật ký kiểm toán và xuất tệp là chức năng nền phục vụ các phân hệ trên. Hồ sơ nhân viên vẫn là nguồn dữ liệu chuẩn liên kết bằng MaNV.
 
 ### Employee Master Profile — mã nhân viên dùng chung
 
 `NhanVien.MaNV` là mã nội bộ chuẩn và được tạo bởi SQL Server; mã này không đổi khi sửa hồ sơ, đổi công việc hoặc nghỉ việc. `MaNVHT` là mã hiển thị, không dùng làm khóa liên kết. Tài khoản, chấm công, nghỉ phép, lương và hợp đồng hiện liên kết với cùng `MaNV`; module mới phải lưu khóa ngoại tới `NhanVien.MaNV`, không tạo bản hồ sơ nhân viên riêng.
 
-Khi tạo hồ sơ thủ công, ứng dụng dùng `employee_profiles.create_employee()` và khóa nguồn để gửi lại cùng yêu cầu không tạo hồ sơ thứ hai. Module có hồ sơ nguồn bên ngoài có thể dùng `employee_profiles.link_source()` để liên kết khóa nguồn ổn định với một `MaNV` đã có. Ứng viên chỉ trở thành nhân viên sau khi chấp nhận offer; luồng tuyển dụng dùng khóa nguồn `recruitment` để liên kết idempotent với một `MaNV`.
-
-### Tuyển dụng và vòng đời nhân viên
-
-Quản trị viên quản lý yêu cầu tuyển dụng, pipeline ứng viên, lịch phỏng vấn, đánh giá và offer. Offer ở trạng thái bản nháp đến khi HR xác nhận đã gửi; chấp nhận offer sẽ tạo hồ sơ chuẩn một lần. Tài khoản quản trị được giới hạn trong phân hệ này.
-
-Onboarding/offboarding tạo checklist liên phòng ban từ mẫu cấu hình. Chỉ hoàn tất offboarding sau khi xử lý checklist, thu hồi hết tài sản đang giao và đến ngày hiệu lực; khi hoàn tất, tài khoản bị thu hồi phiên, hồ sơ chuyển trạng thái nghỉ việc và mẫu khuôn mặt bị xóa. Quản trị viên theo dõi việc cấp/thu hồi thiết bị tại **Tài sản nhân viên**; lịch sử thao tác được giữ theo `MaNV` và có thể xuất CSV, Excel hoặc PDF. Việc tạo/khóa tài khoản và đồng bộ thiết bị ngoài vẫn cần bộ phận phụ trách xử lý thủ công.
-
-### Hiệu suất và mục tiêu
-
-HR tạo chu kỳ, khung năng lực và mục tiêu cá nhân/phòng ban; trọng số mục tiêu áp dụng cho từng nhân viên trong chu kỳ phải cộng đủ 100%. Nhân viên cập nhật kết quả, tự đánh giá năng lực và gửi bản tự đánh giá theo chu kỳ. Quản lý trực tiếp chấm năng lực và điểm quản lý (0–100), rồi chuyển HR phê duyệt. Điểm mục tiêu = tổng (min(thực tế/chỉ tiêu, 100%) × trọng số); điểm cuối = 70% điểm mục tiêu + 30% điểm quản lý. HR phê duyệt chốt kết quả mục tiêu; các lần cập nhật và bước duyệt được lưu theo chu kỳ. Nhân viên có thể đề xuất vai trò mục tiêu và kế hoạch phát triển; quản lý xem xét, HR phê duyệt. Đây là công thức khởi điểm của ứng dụng, cần được doanh nghiệp xác nhận trước khi dùng cho quyết định nhân sự.
-
-### Đào tạo và phúc lợi
-
-Đào tạo liên kết khóa học, đăng ký/duyệt, trạng thái hoàn thành, chứng chỉ/hạn chứng chỉ và hồ sơ kỹ năng cấp độ 1–5 cùng kế hoạch phát triển với `MaNV`. Cấp độ tự khai cần HR xác minh. Phúc lợi có danh mục, mô tả điều kiện, đăng ký nhân viên và duyệt/từ chối của HR; phần điều kiện hưởng hiện được HR xác minh thủ công, chưa tự động tính theo hợp đồng hoặc thời gian công tác.
-
-### Hoạch định nhân lực
-
-Quản trị viên lập kế hoạch headcount và chi phí theo năm/phòng ban/vị trí, đối chiếu với số nhân viên và tổng lương cơ bản hiện hành, và ghi nhận ứng viên kế nhiệm cùng độ sẵn sàng/khoảng trống kỹ năng. Đây là công cụ kế hoạch thủ công; không tự thay đổi định biên, tuyển dụng, lương hoặc điều chuyển.
-
-### Phân tích nhân sự
-
-Trang **Phân tích nhân sự** tổng hợp tuyển mới và offboarding được ghi nhận trong 12 tháng, nhân lực/lương cơ bản hiện tại theo phòng ban, độ phủ kỹ năng và đăng ký đào tạo. Số liệu nghỉ việc chỉ tính các quy trình offboarding đã hoàn tất trong hệ thống; chưa bao gồm lịch sử cũ, chưa có dự báo nghỉ việc/giữ chân hoặc phân tích xu hướng chuyên sâu.
+Hồ sơ nhân viên được tạo qua employee_profiles.create_employee() với mã gửi lại an toàn để một yêu cầu không tạo trùng hồ sơ.
 
 ### Cấu trúc tổ chức và hồ sơ điện tử
 
@@ -118,7 +89,6 @@ $env:HR_DOCUMENT_ENCRYPTION_KEY = "<khóa-vừa-tạo>"
 ```
 Lưu khóa ở nơi quản lý bí mật an toàn và sao lưu tách biệt với database; mất khóa sẽ không giải mã được các tệp. Chỉ nhận PDF, DOCX, JPEG, PNG tối đa 8 MB. Hạn lưu là ngày nhắc rà soát, hệ thống không tự xóa tài liệu; chính sách lưu trữ và xóa cần do doanh nghiệp phê duyệt.
 
-Quản trị viên có thể định nghĩa trường hồ sơ tùy chỉnh kiểu văn bản, số, ngày, có/không hoặc email. Trường được lưu trong bảng giá trị riêng theo `MaNV`, không tạo cột SQL theo tên do người dùng nhập. Có thể đánh dấu trường nhạy cảm để chỉ quản trị viên xem và sửa; trường đã có dữ liệu chỉ được ngừng sử dụng, không xóa.
 
 ### Chấm công theo sự kiện (giai đoạn chuyển tiếp)
 
@@ -127,9 +97,10 @@ Quản trị viên có thể định nghĩa trường hồ sơ tùy chỉnh ki�
 Quản trị viên có thể tạo ca sáng/chiều/đêm, phân ca theo ngày và cấu hình ngày lễ/nghỉ. Khi một nhân viên có ca được phân trong kỳ, chỉ các ngày đã phân ca được xem là ngày làm dự kiến; hệ thống không tự suy đoán ca cho ngày chưa phân. Ngưỡng đi muộn dùng giờ bắt đầu và phút ân hạn của ca. Nếu kỳ chưa có phân ca, hệ thống dùng lịch tuần riêng của nhân viên hoặc cấu hình mặc định. Ngày lễ được loại khỏi ngày nghỉ không phép. Nhân viên gửi yêu cầu tăng ca, quản trị viên phê duyệt và xác nhận giờ thực tế; chỉ giờ đã xác nhận mới vào payroll khi tính lại kỳ lương nháp. Mỗi lần tính payroll lưu snapshot tổng giờ từ các cặp sự kiện vào/ra hoàn tất để đối soát; giờ này chưa tự làm thay đổi lương. Phần tiền tăng ca chỉ dùng giờ trong yêu cầu đã được xác nhận. Phụ cấp ngày lễ chưa được tính.
 
 ### Chấm công bằng khuôn mặt
-Ở trang **Chấm công**, nhân viên tự đăng ký khuôn mặt bằng tài khoản đã gắn với hồ sơ; quản trị viên không thực hiện chấm công khuôn mặt thay nhân viên. Quản trị viên tải ảnh hồ sơ lên, nhân viên xác nhận đồng ý rồi đăng ký mẫu từ ảnh hồ sơ. Khi chấm công, nhân viên chọn hoặc chụp một ảnh rõ mặt (ảnh tĩnh, không phải video trực tiếp) rồi bấm **Quét ảnh và chấm công**. Ảnh được xử lý trên thiết bị và không gửi lên máy chủ; vector đặc trưng được gửi tới máy chủ và lưu trong database dưới dạng mã hóa. Người dùng có thể xóa mẫu đã đăng ký.
+Ở trang **Chấm công**, nhân viên xác nhận đồng ý rồi đăng ký mẫu từ ảnh hồ sơ đã lưu. Khi chấm công, nhân viên bật camera trực tiếp, hoàn thành thử thách chuyển động và được đối chiếu với mẫu đã đăng ký; hệ thống chỉ ghi công sau khi nhận diện thành công. Quản trị viên có thể dùng kiosk để nhận diện nhân viên đang làm đã đăng ký mẫu và còn đồng ý xử lý. Video được xử lý trên thiết bị, không gửi lên máy chủ; vector đặc trưng được gửi để đối chiếu và lưu trong database dưới dạng mã hóa. Người dùng có thể xóa mẫu đã đăng ký.
 
-Trình duyệt cần truy cập Internet để tải Human 3.3.6 cùng mô hình từ jsDelivr; thiết bị di động có thể yêu cầu quyền camera khi chọn chụp ảnh. Luồng hiện chưa có phát hiện người thật/chống giả mạo; ngưỡng nhận diện ban đầu chưa được hiệu chuẩn theo thiết bị và nhân viên thực tế. Giữ phương thức quản trị viên ghi nhận/điều chỉnh và kiểm tra/hiệu chuẩn trước khi dùng kết quả khuôn mặt làm căn cứ tính lương.
+
+Trình duyệt cần truy cập Internet để tải Human 3.3.6 cùng mô hình từ jsDelivr và cần được cấp quyền camera. Luồng có kiểm tra liveness/chống giả mạo chạy trên thiết bị, nhưng điểm do trình duyệt gửi không phải bằng chứng chống giả mạo có thể xác minh độc lập. Ngưỡng nhận diện ban đầu chưa được hiệu chuẩn theo thiết bị và nhân viên thực tế; hãy giữ phương thức chấm công dự phòng và kiểm tra/hiệu chuẩn trước khi dùng kết quả khuôn mặt làm căn cứ tính lương.
 
 ### Bảo vệ dữ liệu và đánh giá độ tin cậy của chấm công khuôn mặt
 
@@ -167,7 +138,7 @@ Thông báo tại bước đăng ký nêu mục đích đối chiếu chấm cô
 3. Mở `config.py`, sửa mục `COMPANY` (tên, địa chỉ, MST, người đại diện). Nút **Kiểm tra kết nối AI** trên trang soạn hợp đồng cho biết kết nối đã thông chưa.
    - Tick **Cho AI tra cứu web** để Claude tra quy định mới nhất (lương tối thiểu vùng, thử việc, báo trước...) và cảnh báo "LƯU Ý HR" nếu lương thấp hơn mức tối thiểu.
    - Muốn dùng AI khác: đặt `AI_PROVIDER = "openai"`, điền `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (không có tra cứu web).
-4. Trong mục **Hợp đồng**, kéo thả hoặc chọn mẫu `.doc`, `.docx` hoặc `.pdf`. DOC cũ được chuyển bằng Microsoft Word cài trên máy chạy ứng dụng; DOCX có văn bản được đọc trực tiếp; DOCX chứa ảnh scan và PDF scan cần Tesseract OCR (tối đa 5 ảnh trong DOCX hoặc 5 trang PDF). Hệ thống trích xuất văn bản để xem lại và làm tài liệu tham khảo cho AI. Khi soạn, chọn mẫu, chọn nhân viên rồi tải hợp đồng dạng Word `.docx` hoặc PDF. Tệp đầu ra dùng định dạng chuẩn của hệ thống, không giữ nguyên bố cục đồ họa của tệp mẫu.
+4. Trong mục **Hợp đồng**, kéo thả hoặc chọn mẫu `.doc`, `.docx` hoặc `.pdf`. DOC cũ được chuyển bằng Microsoft Word cài trên máy chạy ứng dụng; DOCX có văn bản được đọc trực tiếp; DOCX chứa ảnh scan và PDF scan cần Tesseract OCR (tối đa 5 ảnh trong DOCX hoặc 5 trang PDF; cài thêm gói ngôn ngữ `vie`, và đặt biến môi trường `TESSERACT_CMD` nếu `tesseract` không nằm trong PATH). Hệ thống trích xuất văn bản để xem lại và làm tài liệu tham khảo cho AI. Khi soạn, chọn mẫu, chọn nhân viên rồi tải hợp đồng dạng Word `.docx` hoặc PDF. Tệp đầu ra dùng định dạng chuẩn của hệ thống, không giữ nguyên bố cục đồ họa của tệp mẫu.
 
 Bảo mật: thông tin nhân viên trong hồ sơ được ghép vào file Word ngay trên máy chủ của bạn, không gửi cho AI. Nếu chọn hợp đồng mẫu, phần văn bản trích từ mẫu và thông tin công việc/lương/ngày hợp đồng sẽ được gửi tới nhà cung cấp AI đã cấu hình; hãy xóa thông tin cá nhân khỏi mẫu trước khi tải lên. Nội dung AI soạn chỉ là bản nháp, cần nhân sự/pháp chế rà soát trước khi ký.
 
@@ -232,3 +203,9 @@ Quản trị viên mở **Hạn lưu hồ sơ** để xem tối đa 500 tài li�
 
 Quản lý ca hỗ trợ phân theo phòng ban cho một ngày, giờ bắt đầu/kết thúc tùy chỉnh theo từng lượt phân ca và đổi ca theo luồng nhân viên đề nghị → đồng nghiệp xác nhận → quản trị viên duyệt. Yêu cầu tăng ca hiển thị giờ đối soát từ cặp sự kiện vào/ra; chênh lệch với giờ đã duyệt cần lý do. Sự kiện sửa theo khiếu nại được ghi lại như lượt vào/ra thay thế để đối soát.
 
+## Việc xác minh còn lại trên SQL Server
+
+- [ ] Chạy cài đặt schema trên database thử nghiệm mới và mở ứng dụng.
+- [ ] Xác minh nâng cấp database hiện có không làm mất MaNV, chấm công, đơn nghỉ, hợp đồng, lương hoặc tài khoản.
+- [ ] Kiểm tra chuyển nhân viên sang Đã nghỉ việc: đăng nhập mới bị chặn, phiên cũ bị thu hồi và mẫu khuôn mặt bị xóa.
+- [ ] Kiểm tra quyền xem/sửa/xuất theo từng vai trò cho tám phân hệ.

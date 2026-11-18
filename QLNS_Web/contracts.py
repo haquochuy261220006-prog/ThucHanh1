@@ -54,6 +54,7 @@ def _safe_contract_error(error, message="Không thể xử lý hợp đồng lú
     )
     return message
 
+
 LD_CANCU = [
     "Căn cứ Bộ luật Lao động số 45/2019/QH14 ngày 20/11/2019;",
     "Căn cứ các văn bản hướng dẫn thi hành Bộ luật Lao động hiện hành;",
@@ -215,7 +216,9 @@ def _contract_file(file_storage):
     data = file_storage.read(10 * 1024 * 1024 + 1)
     if len(data) > 10 * 1024 * 1024:
         raise ValueError("Tệp hợp đồng tối đa 10 MB.")
-    if (ext == ".pdf" and not data.startswith(b"%PDF-")) or (ext == ".docx" and not data.startswith(b"PK")):
+    if (ext == ".pdf" and not data.startswith(b"%PDF-")) or (
+        ext == ".docx" and not data.startswith(b"PK")
+    ):
         raise ValueError("Nội dung tệp không khớp định dạng đã chọn.")
     return filename, ext[1:], data
 
@@ -327,11 +330,7 @@ Quy tắc nội dung:
 
 
 def _provider():
-    return (
-        "openai"
-        if getattr(config, "AI_PROVIDER", "anthropic") == "openai"
-        else "anthropic"
-    )
+    return "openai" if getattr(config, "AI_PROVIDER", "anthropic") == "openai" else "anthropic"
 
 
 def ai_model():
@@ -358,9 +357,7 @@ def _call_anthropic(system, user_msg, max_tokens, web):
         messages=[{"role": "user", "content": user_msg}],
     )
     if web:
-        kw["tools"] = [
-            {"type": "web_search_20250305", "name": "web_search", "max_uses": 4}
-        ]
+        kw["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 4}]
         system += f"\nHôm nay là {date.today().strftime('%d/%m/%Y')}."
         kw["system"] = system
     resp = client.messages.create(**kw)
@@ -370,9 +367,7 @@ def _call_anthropic(system, user_msg, max_tokens, web):
         (i for i, b in enumerate(blocks) if "tool_result" in getattr(b, "type", "")),
         default=-1,
     )
-    return "".join(
-        b.text for b in blocks[last + 1 :] if getattr(b, "type", "") == "text"
-    )
+    return "".join(b.text for b in blocks[last + 1 :] if getattr(b, "type", "") == "text")
 
 
 def _call_openai(system, user_msg, max_tokens):
@@ -407,7 +402,9 @@ def _call_ai(system, user_msg, max_tokens=4000, web=False):
     if web:
         try:
             return _call_anthropic(system, user_msg, max_tokens, True)
-        except Exception as e:  # tài khoản chưa bật web search, hoặc lỗi tạm thời -> thử lại không tra cứu
+        except (
+            Exception
+        ) as e:  # tài khoản chưa bật web search, hoặc lỗi tạm thời -> thử lại không tra cứu
             if "anthropic" in type(e).__module__ or "web" in str(e).lower():
                 return _call_anthropic(system, user_msg, max_tokens, False)
             raise
@@ -518,9 +515,7 @@ def _fb_labor(c, opts):
             f"{n}. Chế độ bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp thực hiện theo quy định của pháp luật."
         )
     else:
-        out.append(
-            f"{n}. Mức lương thử việc tối thiểu bằng 85% mức lương của công việc làm thử."
-        )
+        out.append(f"{n}. Mức lương thử việc tối thiểu bằng 85% mức lương của công việc làm thử.")
     out += [
         "Điều 4. Nghĩa vụ và quyền lợi của Người lao động",
         "1. Hoàn thành công việc được giao; chấp hành nội quy lao động, quy chế và sự quản lý, điều hành hợp pháp của công ty.",
@@ -635,10 +630,7 @@ def _fb_apprentice(c, opts):
 
 
 def _fb_service(c, opts):
-    dia_diem = (
-        opts.get("dia_diem")
-        or "linh hoạt, trực tuyến hoặc tại địa điểm do Bên A đề nghị"
-    )
+    dia_diem = opts.get("dia_diem") or "linh hoạt, trực tuyến hoặc tại địa điểm do Bên A đề nghị"
     out = [
         "Điều 1. Nội dung dịch vụ",
         f"1. Bên B thực hiện công việc cộng tác với vai trò: {c['TenCV'] or '........'}; phối hợp với bộ phận: {c['TenPB'] or '........'} của Bên A.",
@@ -747,9 +739,7 @@ def generate_clauses(c, opts, web=False, reference_text=""):
             raise ValueError("AI trả về nội dung không đúng định dạng")
         return text, None
     except Exception as e:
-        return fallback_text(
-            c, opts
-        ), "Không gọi được dịch vụ AI. Đã dùng mẫu điều khoản chuẩn."
+        return fallback_text(c, opts), "Không gọi được dịch vụ AI. Đã dùng mẫu điều khoản chuẩn."
 
 
 def revise_clauses(c, opts, current, instruction, web=False, reference_text=""):
@@ -926,9 +916,7 @@ def build_docx(c, so_hd, ngay_ky, clauses, signatures=None):
         if not line:
             continue
         if re.match(r"^Điều\s+\d+", line):
-            _para(
-                doc, line, bold=True, before=8, after=3
-            ).paragraph_format.keep_with_next = True
+            _para(doc, line, bold=True, before=8, after=3).paragraph_format.keep_with_next = True
         elif re.match(r"^[a-zđ]\)\s", line):
             _para(doc, line, align=WD_ALIGN_PARAGRAPH.JUSTIFY, indent=1.4, after=3)
         else:
@@ -1055,9 +1043,7 @@ def build_pdf(c, so_hd, ngay_ky, clauses, signatures=None):
     plain = ParagraphStyle("ContractPlain", parent=normal, firstLineIndent=0)
     centered = ParagraphStyle("ContractCentered", parent=plain, alignment=TA_CENTER)
     right = ParagraphStyle("ContractRight", parent=plain, alignment=TA_RIGHT)
-    italic_style = ParagraphStyle(
-        "ContractItalic", parent=plain, fontName=family + "-Italic"
-    )
+    italic_style = ParagraphStyle("ContractItalic", parent=plain, fontName=family + "-Italic")
     section = ParagraphStyle(
         "ContractSection",
         parent=plain,
@@ -1097,9 +1083,7 @@ def build_pdf(c, so_hd, ngay_ky, clauses, signatures=None):
         )
     )
     story.extend([header, Spacer(1, 10)])
-    story.extend(
-        [bold_p(info["title"], centered), p(f"Số: {so_hd}", italic_style), Spacer(1, 7)]
-    )
+    story.extend([bold_p(info["title"], centered), p(f"Số: {so_hd}", italic_style), Spacer(1, 7)])
     story.extend(p(line, italic_style) for line in info["canc"])
     story.extend(
         [
@@ -1122,9 +1106,7 @@ def build_pdf(c, so_hd, ngay_ky, clauses, signatures=None):
         story.append(p(f"{label}: {value or '........'}", plain))
     story.extend([Spacer(1, 6), bold_p(info["party"][1])])
     pronoun = (
-        "Bà"
-        if c.get("GioiTinh") == "Nữ"
-        else ("Ông" if c.get("GioiTinh") == "Nam" else "Ông/Bà")
+        "Bà" if c.get("GioiTinh") == "Nữ" else ("Ông" if c.get("GioiTinh") == "Nam" else "Ông/Bà")
     )
     story.append(p(f"{pronoun}: {c.get('HoTen') or '........'}".upper(), plain))
     for label, value in (
@@ -1151,9 +1133,7 @@ def build_pdf(c, so_hd, ngay_ky, clauses, signatures=None):
         if re.match(r"^Điều\s+\d+", line):
             story.append(bold_p(line, section))
         else:
-            story.append(
-                p(line, normal if not re.match(r"^[a-zđ]\)\s", line, re.I) else plain)
-            )
+            story.append(p(line, normal if not re.match(r"^[a-zđ]\)\s", line, re.I) else plain))
     story.extend(
         [
             Spacer(1, 10),
@@ -1186,9 +1166,7 @@ def build_pdf(c, so_hd, ngay_ky, clauses, signatures=None):
             if signature
             else p("", centered)
         )
-        cells.append(
-            [bold_p(title, centered), p(note, centered), image, bold_p(name, centered)]
-        )
+        cells.append([bold_p(title, centered), p(note, centered), image, bold_p(name, centered)])
     sig_table = Table(
         [[cells[0][i], cells[1][i]] for i in range(4)], colWidths=[7.5 * cm, 7.5 * cm]
     )
@@ -1235,9 +1213,7 @@ def _extract_docx_text(data):
             or sum(item.file_size for item in entries) > 30 * 1024 * 1024
             or "word/document.xml" not in archive.namelist()
         ):
-            raise ValueError(
-                "Tệp Word không hợp lệ hoặc có kích thước giải nén quá lớn."
-            )
+            raise ValueError("Tệp Word không hợp lệ hoặc có kích thước giải nén quá lớn.")
     doc = Document(io.BytesIO(data))
     lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     for table in doc.tables:
@@ -1370,9 +1346,7 @@ def _extract_contract_text(filename, data):
     has_articles = bool(re.search(r"\bdieu\s+\d+", plain))
     has_parties = "ben a" in plain and "ben b" in plain
     if not has_contract_title and not (has_articles and has_parties):
-        raise ValueError(
-            "Không nhận dạng được đây là hợp đồng. Chỉ tải tệp có nội dung hợp đồng."
-        )
+        raise ValueError("Không nhận dạng được đây là hợp đồng. Chỉ tải tệp có nội dung hợp đồng.")
     if not text.strip():
         raise ValueError("Không trích xuất được văn bản từ hợp đồng.")
     return text[:18000]
@@ -1385,9 +1359,7 @@ def mau_hop_dong():
     try:
         if action == "delete":
             ma_mau = request.form.get("MaMau", type=int)
-            if not ma_mau or not db.execute(
-                "DELETE FROM MauHopDong WHERE MaMau=?", (ma_mau,)
-            ):
+            if not ma_mau or not db.execute("DELETE FROM MauHopDong WHERE MaMau=?", (ma_mau,)):
                 raise ValueError("Không tìm thấy hợp đồng mẫu.")
             flash("Đã xóa hợp đồng mẫu.", "success")
         else:
@@ -1401,21 +1373,15 @@ def mau_hop_dong():
                 or not upload.filename
                 or not upload.filename.lower().endswith((".doc", ".docx", ".pdf"))
             ):
-                raise ValueError(
-                    "Vui lòng chọn tệp hợp đồng mẫu định dạng .doc, .docx hoặc .pdf."
-                )
+                raise ValueError("Vui lòng chọn tệp hợp đồng mẫu định dạng .doc, .docx hoặc .pdf.")
             data = upload.read(8 * 1024 * 1024 + 1)
             if len(data) > 8 * 1024 * 1024:
                 raise ValueError("Hợp đồng mẫu tối đa 8 MB.")
             text = _extract_contract_text(upload.filename, data)
             filename = (
-                re.sub(r"[^\w.\-]+", "_", upload.filename, flags=re.U)[:180]
-                or "hop_dong_mau.docx"
+                re.sub(r"[^\w.\-]+", "_", upload.filename, flags=re.U)[:180] or "hop_dong_mau.docx"
             )
-            name = (
-                request.form.get("TenMau", "").strip()[:120]
-                or filename.rsplit(".", 1)[0]
-            )
+            name = request.form.get("TenMau", "").strip()[:120] or filename.rsplit(".", 1)[0]
             db.execute(
                 "INSERT INTO MauHopDong(TenMau,FileName,NoiDung,TepDocx) VALUES(?,?,?,?)",
                 (name, filename, text, data),
@@ -1452,9 +1418,7 @@ def _contract_list():
 
 
 def _template_list():
-    return db.query("SELECT MaMau,TenMau,FileName FROM MauHopDong ORDER BY MaMau DESC")[
-        1
-    ]
+    return db.query("SELECT MaMau,TenMau,FileName FROM MauHopDong ORDER BY MaMau DESC")[1]
 
 
 def _employee_list():
@@ -1539,7 +1503,11 @@ def tai_tep_hop_dong(ma_tep):
     ):
         return "Bạn không có quyền xem tài liệu này.", 403
     sensitive_audit.record(employee_id, "HopDong", "download", user["user"])
-    mimetype = "application/pdf" if file_format == "pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    mimetype = (
+        "application/pdf"
+        if file_format == "pdf"
+        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
     response = send_file(
         io.BytesIO(bytes(data)),
         as_attachment=True,
@@ -1577,7 +1545,9 @@ def cua_toi():
         (manv,),
     )[1]
     sensitive_audit.record(manv, "HopDong", "list", user["user"])
-    return render_template("contracts_employee.html", contracts=contracts, documents=documents, admin=False)
+    return render_template(
+        "contracts_employee.html", contracts=contracts, documents=documents, admin=False
+    )
 
 
 @bp.route("/hopdong/vong-doi/<int:mahd>", methods=["GET", "POST"])
@@ -1592,37 +1562,82 @@ def vong_doi(mahd):
             )[1]
             if not row:
                 raise ValueError("Không tìm thấy hợp đồng.")
-            employee_id, contract_type, start, end, salary, old_status, version, parent_contract_id = row[0]
+            (
+                employee_id,
+                contract_type,
+                start,
+                end,
+                salary,
+                old_status,
+                version,
+                parent_contract_id,
+            ) = row[0]
             action = request.form.get("action", "")
             actor = session["user"]["user"]
 
             if action == "submit_review":
-                draft_doc = db.query("SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Bản nháp' ORDER BY PhienBan DESC", (mahd,))[1]
-                if old_status not in ("Bản nháp", "Đã ký", "Còn hiệu lực", "Hết hạn") or (old_status != "Bản nháp" and not draft_doc):
+                draft_doc = db.query(
+                    "SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Bản nháp' ORDER BY PhienBan DESC",
+                    (mahd,),
+                )[1]
+                if old_status not in ("Bản nháp", "Đã ký", "Còn hiệu lực", "Hết hạn") or (
+                    old_status != "Bản nháp" and not draft_doc
+                ):
                     raise ValueError("Chỉ hợp đồng nháp hoặc phiên bản AI nháp mới được gửi duyệt.")
                 new_status = "Chờ duyệt" if old_status == "Bản nháp" else old_status
                 if old_status == "Bản nháp":
                     db.execute("UPDATE HopDong SET TrangThai=N'Chờ duyệt' WHERE MaHD=?", (mahd,))
                 if draft_doc:
-                    db.execute("UPDATE TepHopDong SET TrangThai=N'Chờ duyệt' WHERE MaTep=?", (draft_doc[0][0],))
-                _contract_history(mahd, "gui_duyet", old_status, new_status, "Chuyển bản nháp sang chờ HR/pháp chế duyệt.")
+                    db.execute(
+                        "UPDATE TepHopDong SET TrangThai=N'Chờ duyệt' WHERE MaTep=?",
+                        (draft_doc[0][0],),
+                    )
+                _contract_history(
+                    mahd,
+                    "gui_duyet",
+                    old_status,
+                    new_status,
+                    "Chuyển bản nháp sang chờ HR/pháp chế duyệt.",
+                )
                 flash("Đã gửi bản hợp đồng để HR/pháp chế kiểm tra.", "success")
             elif action == "approve":
-                pending_doc = db.query("SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Chờ duyệt' ORDER BY PhienBan DESC", (mahd,))[1]
-                if old_status != "Chờ duyệt" and (not pending_doc or old_status not in ("Đã ký", "Còn hiệu lực", "Hết hạn")):
+                pending_doc = db.query(
+                    "SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Chờ duyệt' ORDER BY PhienBan DESC",
+                    (mahd,),
+                )[1]
+                if old_status != "Chờ duyệt" and (
+                    not pending_doc or old_status not in ("Đã ký", "Còn hiệu lực", "Hết hạn")
+                ):
                     raise ValueError("Hợp đồng chưa ở trạng thái chờ duyệt.")
                 new_status = "Đã duyệt" if old_status == "Chờ duyệt" else old_status
                 if old_status == "Chờ duyệt":
-                    db.execute("UPDATE HopDong SET TrangThai=N'Đã duyệt',NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaHD=?", (actor, mahd))
+                    db.execute(
+                        "UPDATE HopDong SET TrangThai=N'Đã duyệt',NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaHD=?",
+                        (actor, mahd),
+                    )
                 else:
-                    db.execute("UPDATE HopDong SET NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaHD=?", (actor, mahd))
+                    db.execute(
+                        "UPDATE HopDong SET NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaHD=?",
+                        (actor, mahd),
+                    )
                 if pending_doc:
-                    db.execute("UPDATE TepHopDong SET TrangThai=N'Đã duyệt',NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaTep=?", (actor, pending_doc[0][0]))
+                    db.execute(
+                        "UPDATE TepHopDong SET TrangThai=N'Đã duyệt',NguoiDuyet=?,NgayDuyet=SYSUTCDATETIME() WHERE MaTep=?",
+                        (actor, pending_doc[0][0]),
+                    )
                 new_status = "Đã duyệt" if old_status == "Chờ duyệt" else old_status
-                _contract_history(mahd, "duyet", old_status, new_status, "HR/pháp chế duyệt bản nháp.")
-                flash("Đã duyệt bản nháp. Bản mới chỉ được ghi nhận chính thức sau khi tải lên tệp đã ký.", "success")
+                _contract_history(
+                    mahd, "duyet", old_status, new_status, "HR/pháp chế duyệt bản nháp."
+                )
+                flash(
+                    "Đã duyệt bản nháp. Bản mới chỉ được ghi nhận chính thức sau khi tải lên tệp đã ký.",
+                    "success",
+                )
             elif action == "return_draft":
-                pending_doc = db.query("SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Chờ duyệt' ORDER BY PhienBan DESC", (mahd,))[1]
+                pending_doc = db.query(
+                    "SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Chờ duyệt' ORDER BY PhienBan DESC",
+                    (mahd,),
+                )[1]
                 if old_status != "Chờ duyệt" and not pending_doc:
                     raise ValueError("Chỉ bản đang chờ duyệt mới có thể trả lại.")
                 reason = request.form.get("LyDo", "").strip()
@@ -1632,31 +1647,89 @@ def vong_doi(mahd):
                 if old_status == "Chờ duyệt":
                     db.execute("UPDATE HopDong SET TrangThai=N'Bản nháp' WHERE MaHD=?", (mahd,))
                 if pending_doc:
-                    db.execute("UPDATE TepHopDong SET TrangThai=N'Bị từ chối',GhiChu=? WHERE MaTep=?", (reason[:1000], pending_doc[0][0]))
+                    db.execute(
+                        "UPDATE TepHopDong SET TrangThai=N'Bị từ chối',GhiChu=? WHERE MaTep=?",
+                        (reason[:1000], pending_doc[0][0]),
+                    )
                 _contract_history(mahd, "tra_lai_chinh_sua", old_status, new_status, reason)
                 flash("Đã trả bản nháp để chỉnh sửa; lịch sử được lưu.", "success")
             elif action == "sign":
-                approved_doc = db.query("SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Đã duyệt' ORDER BY PhienBan DESC", (mahd,))[1]
-                if old_status not in ("Đã duyệt", "Đã ký", "Còn hiệu lực", "Hết hạn") or (old_status != "Đã duyệt" and not approved_doc):
+                approved_doc = db.query(
+                    "SELECT TOP 1 MaTep FROM TepHopDong WHERE MaHD=? AND LoaiTaiLieu=N'Bản nháp AI' AND TrangThai=N'Đã duyệt' ORDER BY PhienBan DESC",
+                    (mahd,),
+                )[1]
+                if old_status not in ("Đã duyệt", "Đã ký", "Còn hiệu lực", "Hết hạn") or (
+                    old_status != "Đã duyệt" and not approved_doc
+                ):
                     raise ValueError("Chỉ hợp đồng đã duyệt mới được ghi nhận bản ký chính thức.")
                 signed_on = date.fromisoformat(request.form.get("NgayKy", ""))
                 if signed_on > date.today():
                     raise ValueError("Ngày ký không được ở tương lai.")
                 filename, file_format, data = _contract_file(request.files.get("file"))
-                file_version = (db.scalar("SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?", (mahd,)) or 1)
+                file_version = (
+                    db.scalar(
+                        "SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?", (mahd,)
+                    )
+                    or 1
+                )
                 approver = db.scalar("SELECT NguoiDuyet FROM HopDong WHERE MaHD=?", (mahd,))
                 approved_at = db.scalar("SELECT NgayDuyet FROM HopDong WHERE MaHD=?", (mahd,))
-                final_status = old_status if old_status in ("Đã ký", "Còn hiệu lực") else ("Đã ký" if start > date.today() else ("Hết hạn" if end and end < date.today() else "Còn hiệu lực"))
-                db.execute("INSERT INTO TepHopDong(MaHD,TenTep,DinhDang,TepData,NoiDung,NguoiTao,LoaiTaiLieu,TrangThai,PhienBan,NguoiDuyet,NgayDuyet,NgayKy,GhiChu) VALUES(?,?,?,?,?,?,N'Bản chính thức đã ký',N'Đã ký',?,?,?,?,N'Tệp gốc do HR tải lên sau khi ký')", (mahd, filename, file_format, data, "", actor, file_version, approver, approved_at, signed_on))
+                final_status = (
+                    old_status
+                    if old_status in ("Đã ký", "Còn hiệu lực")
+                    else (
+                        "Đã ký"
+                        if start > date.today()
+                        else ("Hết hạn" if end and end < date.today() else "Còn hiệu lực")
+                    )
+                )
+                db.execute(
+                    "INSERT INTO TepHopDong(MaHD,TenTep,DinhDang,TepData,NoiDung,NguoiTao,LoaiTaiLieu,TrangThai,PhienBan,NguoiDuyet,NgayDuyet,NgayKy,GhiChu) VALUES(?,?,?,?,?,?,N'Bản chính thức đã ký',N'Đã ký',?,?,?,?,N'Tệp gốc do HR tải lên sau khi ký')",
+                    (
+                        mahd,
+                        filename,
+                        file_format,
+                        data,
+                        "",
+                        actor,
+                        file_version,
+                        approver,
+                        approved_at,
+                        signed_on,
+                    ),
+                )
                 if approved_doc:
-                    db.execute("UPDATE TepHopDong SET TrangThai=N'Đã phát hành' WHERE MaTep=?", (approved_doc[0][0],))
-                db.execute("UPDATE HopDong SET TrangThai=?,NgayKy=?,NguoiKy=?,PhienBan=PhienBan+1 WHERE MaHD=?", (final_status, signed_on, actor, mahd))
-                _contract_history(mahd, "ky_chinh_thuc", old_status, final_status, f"Phiên bản tệp {file_version}; ngày ký {signed_on}.")
+                    db.execute(
+                        "UPDATE TepHopDong SET TrangThai=N'Đã phát hành' WHERE MaTep=?",
+                        (approved_doc[0][0],),
+                    )
+                db.execute(
+                    "UPDATE HopDong SET TrangThai=?,NgayKy=?,NguoiKy=?,PhienBan=PhienBan+1 WHERE MaHD=?",
+                    (final_status, signed_on, actor, mahd),
+                )
+                _contract_history(
+                    mahd,
+                    "ky_chinh_thuc",
+                    old_status,
+                    final_status,
+                    f"Phiên bản tệp {file_version}; ngày ký {signed_on}.",
+                )
                 if parent_contract_id:
-                    parent_status = db.scalar("SELECT TrangThai FROM HopDong WHERE MaHD=?", (parent_contract_id,))
+                    parent_status = db.scalar(
+                        "SELECT TrangThai FROM HopDong WHERE MaHD=?", (parent_contract_id,)
+                    )
                     if parent_status in ("Đã ký", "Còn hiệu lực", "Hết hạn"):
-                        db.execute("UPDATE HopDong SET TrangThai=N'Đã gia hạn' WHERE MaHD=?", (parent_contract_id,))
-                        _contract_history(parent_contract_id, "gia_han_hoan_tat", parent_status, "Đã gia hạn", f"Hợp đồng #{mahd} đã được ký thay thế.")
+                        db.execute(
+                            "UPDATE HopDong SET TrangThai=N'Đã gia hạn' WHERE MaHD=?",
+                            (parent_contract_id,),
+                        )
+                        _contract_history(
+                            parent_contract_id,
+                            "gia_han_hoan_tat",
+                            parent_status,
+                            "Đã gia hạn",
+                            f"Hợp đồng #{mahd} đã được ký thay thế.",
+                        )
                 flash("Đã lưu bản ký chính thức và ghi nhận ngày ký.", "success")
             elif action == "renew":
                 if old_status not in ("Đã ký", "Còn hiệu lực", "Hết hạn"):
@@ -1665,16 +1738,41 @@ def vong_doi(mahd):
                 end_value = request.form.get("NgayKetThucMoi", "").strip()
                 new_end = date.fromisoformat(end_value) if end_value else None
                 new_salary = int(float(request.form.get("LuongMoi", salary or 0)))
-                if (contract_type != "Không thời hạn" and not new_end) or (new_end and new_end < new_start) or new_salary < 0:
+                if (
+                    (contract_type != "Không thời hạn" and not new_end)
+                    or (new_end and new_end < new_start)
+                    or new_salary < 0
+                ):
                     raise ValueError("Ngày kết thúc hoặc mức lương mới không hợp lệ.")
                 new_id = db.query(
                     """INSERT INTO HopDong(MaNV,LoaiHD,NgayBatDau,NgayKetThuc,LuongHD,TrangThai,NguoiLap,PhienBan,HopDongGoc)
                        OUTPUT INSERTED.MaHD VALUES(?,?,?,?,?,N'Bản nháp',?,?,?)""",
-                    (employee_id, contract_type, new_start, new_end, new_salary, actor, version + 1, mahd),
+                    (
+                        employee_id,
+                        contract_type,
+                        new_start,
+                        new_end,
+                        new_salary,
+                        actor,
+                        version + 1,
+                        mahd,
+                    ),
                 )[1][0][0]
-                _contract_history(mahd, "tao_ban_nhap_gia_han", old_status, old_status, f"Tạo hợp đồng nháp mới #{new_id}, phiên bản {version + 1}; hợp đồng hiện tại vẫn giữ hiệu lực đến khi bản mới được ký.")
-                db.execute("INSERT INTO LichSuHopDong(MaHD,HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien) VALUES(?,N'tai_ky',NULL,N'Bản nháp',?,?)", (new_id, f"Gia hạn/tái ký từ hợp đồng #{mahd}", actor))
-                flash(f"Đã tạo hợp đồng nháp #{new_id} để tái ký; hợp đồng cũ được lưu lịch sử.", "success")
+                _contract_history(
+                    mahd,
+                    "tao_ban_nhap_gia_han",
+                    old_status,
+                    old_status,
+                    f"Tạo hợp đồng nháp mới #{new_id}, phiên bản {version + 1}; hợp đồng hiện tại vẫn giữ hiệu lực đến khi bản mới được ký.",
+                )
+                db.execute(
+                    "INSERT INTO LichSuHopDong(MaHD,HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien) VALUES(?,N'tai_ky',NULL,N'Bản nháp',?,?)",
+                    (new_id, f"Gia hạn/tái ký từ hợp đồng #{mahd}", actor),
+                )
+                flash(
+                    f"Đã tạo hợp đồng nháp #{new_id} để tái ký; hợp đồng cũ được lưu lịch sử.",
+                    "success",
+                )
             elif action == "terminate":
                 if old_status not in ("Đã ký", "Còn hiệu lực", "Hết hạn"):
                     raise ValueError("Chỉ hợp đồng đã ký/đang hiệu lực mới được chấm dứt.")
@@ -1682,26 +1780,66 @@ def vong_doi(mahd):
                 reason = request.form.get("LyDo", "").strip()
                 if ended_on < start or ended_on > date.today() or not reason:
                     raise ValueError("Cần ngày chấm dứt hợp lệ và lý do.")
-                db.execute("UPDATE HopDong SET TrangThai=N'Đã chấm dứt',NgayKetThuc=?,LyDoChamDut=? WHERE MaHD=?", (ended_on, reason[:1000], mahd))
-                _contract_history(mahd, "cham_dut", old_status, "Đã chấm dứt", f"{ended_on}: {reason}")
+                db.execute(
+                    "UPDATE HopDong SET TrangThai=N'Đã chấm dứt',NgayKetThuc=?,LyDoChamDut=? WHERE MaHD=?",
+                    (ended_on, reason[:1000], mahd),
+                )
+                _contract_history(
+                    mahd, "cham_dut", old_status, "Đã chấm dứt", f"{ended_on}: {reason}"
+                )
                 flash("Đã ghi nhận chấm dứt hợp đồng.", "success")
             elif action == "attach":
                 doc_type = request.form.get("LoaiTaiLieu", "")
-                allowed_types = ("Phụ lục", "Quyết định thay đổi lương", "Quyết định thay đổi chức vụ", "Tài liệu khác")
+                allowed_types = (
+                    "Phụ lục",
+                    "Quyết định thay đổi lương",
+                    "Quyết định thay đổi chức vụ",
+                    "Tài liệu khác",
+                )
                 if doc_type not in allowed_types:
                     raise ValueError("Loại tài liệu đính kèm không hợp lệ.")
                 filename, file_format, data = _contract_file(request.files.get("file"))
                 signed = request.form.get("da_ky") == "1"
-                signed_on = date.fromisoformat(request.form.get("NgayKy", "")) if signed and request.form.get("NgayKy") else None
+                signed_on = (
+                    date.fromisoformat(request.form.get("NgayKy", ""))
+                    if signed and request.form.get("NgayKy")
+                    else None
+                )
                 if signed and not signed_on:
                     raise ValueError("Cần ghi ngày ký khi xác nhận phụ lục/quyết định đã ký.")
                 if signed and signed_on > date.today():
                     raise ValueError("Ngày ký không được ở tương lai.")
                 note = request.form.get("GhiChu", "").strip()[:1000]
-                file_version = db.scalar("SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?", (mahd,)) or 1
-                db.execute("INSERT INTO TepHopDong(MaHD,TenTep,DinhDang,TepData,NoiDung,NguoiTao,LoaiTaiLieu,TrangThai,PhienBan,NgayKy,GhiChu) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (mahd, filename, file_format, data, "", actor, doc_type, "Đã ký" if signed else "Bản nháp", file_version, signed_on, note))
+                file_version = (
+                    db.scalar(
+                        "SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?", (mahd,)
+                    )
+                    or 1
+                )
+                db.execute(
+                    "INSERT INTO TepHopDong(MaHD,TenTep,DinhDang,TepData,NoiDung,NguoiTao,LoaiTaiLieu,TrangThai,PhienBan,NgayKy,GhiChu) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        mahd,
+                        filename,
+                        file_format,
+                        data,
+                        "",
+                        actor,
+                        doc_type,
+                        "Đã ký" if signed else "Bản nháp",
+                        file_version,
+                        signed_on,
+                        note,
+                    ),
+                )
                 db.execute("UPDATE HopDong SET PhienBan=PhienBan+1 WHERE MaHD=?", (mahd,))
-                _contract_history(mahd, "tai_lieu", old_status, old_status, f"{doc_type} · phiên bản tài liệu {file_version} · {note}")
+                _contract_history(
+                    mahd,
+                    "tai_lieu",
+                    old_status,
+                    old_status,
+                    f"{doc_type} · phiên bản tài liệu {file_version} · {note}",
+                )
                 flash("Đã lưu tài liệu/phụ lục vào lịch sử hợp đồng.", "success")
             else:
                 raise ValueError("Thao tác vòng đời hợp đồng không hợp lệ.")
@@ -1717,8 +1855,14 @@ def vong_doi(mahd):
     if not contract:
         return "Không tìm thấy hợp đồng.", 404
     sensitive_audit.record(contract[0][1], "HopDong", "view", session["user"]["user"])
-    documents = db.query("SELECT MaTep,TenTep,DinhDang,LoaiTaiLieu,TrangThai,PhienBan,NguoiTao,NgayTao,NguoiDuyet,NgayDuyet,NgayKy,GhiChu FROM TepHopDong WHERE MaHD=? ORDER BY PhienBan DESC,MaTep DESC", (mahd,))[1]
-    history = db.query("SELECT HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien,TaoLuc FROM LichSuHopDong WHERE MaHD=? ORDER BY MaLichSu DESC", (mahd,))[1]
+    documents = db.query(
+        "SELECT MaTep,TenTep,DinhDang,LoaiTaiLieu,TrangThai,PhienBan,NguoiTao,NgayTao,NguoiDuyet,NgayDuyet,NgayKy,GhiChu FROM TepHopDong WHERE MaHD=? ORDER BY PhienBan DESC,MaTep DESC",
+        (mahd,),
+    )[1]
+    history = db.query(
+        "SELECT HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien,TaoLuc FROM LichSuHopDong WHERE MaHD=? ORDER BY MaLichSu DESC",
+        (mahd,),
+    )[1]
     document_states = {item[4] for item in documents if item[3] == "Bản nháp AI"}
     return render_template(
         "contract_lifecycle.html",
@@ -1804,9 +1948,7 @@ def soan(mahd=None):
             template_id = int(ctx["selected_template_id"])
         except ValueError:
             template_id = 0
-        row = db.query("SELECT NoiDung FROM MauHopDong WHERE MaMau=?", (template_id,))[
-            1
-        ]
+        row = db.query("SELECT NoiDung FROM MauHopDong WHERE MaMau=?", (template_id,))[1]
         if not row:
             flash("Không tìm thấy hợp đồng mẫu đã chọn.", "error")
             return render_template("contract_ai.html", **ctx)
@@ -1848,14 +1990,9 @@ def soan(mahd=None):
         try:
             for key in ("employee", "employer"):
                 encoded = f.get(f"{key}_signature", "")
-                if (
-                    not encoded.startswith("data:image/png;base64,")
-                    or len(encoded) > 500_000
-                ):
+                if not encoded.startswith("data:image/png;base64,") or len(encoded) > 500_000:
                     raise ValueError("Vui lòng ký đủ hai bên trước khi tải hợp đồng.")
-                signatures[key] = base64.b64decode(
-                    encoded.split(",", 1)[1], validate=True
-                )
+                signatures[key] = base64.b64decode(encoded.split(",", 1)[1], validate=True)
         except (ValueError, base64.binascii.Error) as e:
             flash(str(e) or "Dữ liệu chữ ký không hợp lệ.", "error")
             return render_template("contract_ai.html", **ctx)
@@ -1869,7 +2006,9 @@ def soan(mahd=None):
                 buf = build_pdf(c, so_hd, ngay_ky, current, signatures)
             except Exception as e:
                 flash(
-                    _safe_contract_error(e, "Không tạo được PDF. Hãy kiểm tra cấu hình font và thư viện xuất PDF."),
+                    _safe_contract_error(
+                        e, "Không tạo được PDF. Hãy kiểm tra cấu hình font và thư viện xuất PDF."
+                    ),
                     "error",
                 )
                 return render_template("contract_ai.html", **ctx)
@@ -1898,19 +2037,53 @@ def soan(mahd=None):
                            VALUES(@MaHD,N'tao_ban_nhap_ai',NULL,N'Bản nháp',N'Tạo hợp đồng với hỗ trợ AI; chưa duyệt hoặc ký.',?);
                            COMMIT;""",
                         (
-                            c["MaNV"], c["LoaiHD"], c["NgayBatDau"], c["NgayKetThuc"], c["LuongHD"],
-                            session["user"]["user"], filename, output_format, buf.getvalue(), current,
-                            session["user"]["user"], session["user"]["user"],
+                            c["MaNV"],
+                            c["LoaiHD"],
+                            c["NgayBatDau"],
+                            c["NgayKetThuc"],
+                            c["LuongHD"],
+                            session["user"]["user"],
+                            filename,
+                            output_format,
+                            buf.getvalue(),
+                            current,
+                            session["user"]["user"],
+                            session["user"]["user"],
                         ),
                     )
                 else:
-                    current_status = db.scalar("SELECT TrangThai FROM HopDong WHERE MaHD=?", (c["MaHD"],))
-                    next_version = db.scalar("SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?", (c["MaHD"],)) or 1
+                    current_status = db.scalar(
+                        "SELECT TrangThai FROM HopDong WHERE MaHD=?", (c["MaHD"],)
+                    )
+                    next_version = (
+                        db.scalar(
+                            "SELECT ISNULL(MAX(PhienBan),0)+1 FROM TepHopDong WHERE MaHD=?",
+                            (c["MaHD"],),
+                        )
+                        or 1
+                    )
                     db.execute(
                         "INSERT INTO TepHopDong(MaHD,TenTep,DinhDang,TepData,NoiDung,NguoiTao,LoaiTaiLieu,TrangThai,PhienBan,GhiChu) VALUES(?,?,?,?,?,?,N'Bản nháp AI',N'Bản nháp',?,N'AI tạo; cần HR/pháp chế kiểm tra.')",
-                        (c["MaHD"], filename, output_format, buf.getvalue(), current, session["user"]["user"], next_version),
+                        (
+                            c["MaHD"],
+                            filename,
+                            output_format,
+                            buf.getvalue(),
+                            current,
+                            session["user"]["user"],
+                            next_version,
+                        ),
                     )
-                    db.execute("INSERT INTO LichSuHopDong(MaHD,HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien) VALUES(?,N'tao_ban_nhap_ai',?,?,?,?)", (c["MaHD"], current_status, current_status, f"Tạo bản nháp AI phiên bản {next_version}; chưa có hiệu lực.", session["user"]["user"]))
+                    db.execute(
+                        "INSERT INTO LichSuHopDong(MaHD,HanhDong,TrangThaiCu,TrangThaiMoi,ChiTiet,NguoiThucHien) VALUES(?,N'tao_ban_nhap_ai',?,?,?,?)",
+                        (
+                            c["MaHD"],
+                            current_status,
+                            current_status,
+                            f"Tạo bản nháp AI phiên bản {next_version}; chưa có hiệu lực.",
+                            session["user"]["user"],
+                        ),
+                    )
             except Exception as e:
                 flash(_safe_contract_error(e, "Không lưu được tệp hợp đồng vào hệ thống."), "error")
                 return render_template("contract_ai.html", **ctx)

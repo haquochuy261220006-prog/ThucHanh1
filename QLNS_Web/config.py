@@ -6,16 +6,14 @@ DATABASE = "NHANSU_PY"  # database mới cho bản Python (tránh đụng schema
 DRIVER = "ODBC Driver 17 for SQL Server"  # hoặc "ODBC Driver 18 for SQL Server"
 WINDOWS_AUTH = True  # False -> dùng USER/PASSWORD bên dưới
 USER = "sa"
-PASSWORD = ""
+PASSWORD = os.environ.get("DB_PASSWORD", "")  # nên đặt qua biến môi trường thay vì ghi vào mã nguồn
 
 CONG_CHUAN = 25  # số ngày công chuẩn/tháng -> lương ngày = lương cơ bản / CONG_CHUAN
 GIO_VAO_CHUAN = "08:30"  # vào sau giờ này tính là đi muộn
 
 # ---- Quy tắc tính lương (xem payroll.py) ----
 NGAY_NGHI_TUAN = (6,)  # ngày nghỉ cố định trong tuần: 0=Thứ 2 ... 5=Thứ 7, 6=Chủ nhật
-CHUYEN_CAN_SO_NGAY = (
-    25  # đi làm từ số ngày này trở lên trong tháng thì được thưởng chuyên cần
-)
+CHUYEN_CAN_SO_NGAY = 25  # đi làm từ số ngày này trở lên trong tháng thì được thưởng chuyên cần
 CHUYEN_CAN_TY_LE = 0.25  # thưởng chuyên cần = 25% lương cơ bản
 MUON_TRU_NGAY = 0  # chỉ ghi nhận vi phạm; không tự động khấu trừ tiền lương
 NGHI_KP_TRU_NGAY = 1  # mỗi ngày nghỉ không phép trừ 1 ngày lương
@@ -71,7 +69,9 @@ FACE_LIVENESS_THRESHOLD = float(os.environ.get("FACE_LIVENESS_THRESHOLD", "0.70"
 FACE_ENCRYPTION_KEY = os.environ.get("FACE_ENCRYPTION_KEY", "")
 FACE_RETENTION_DAYS = int(os.environ.get("FACE_RETENTION_DAYS", "365"))
 FACE_CONSENT_VERSION = "2026-11-v2"
-FACE_CONSENT_PURPOSE = "Chấm công nhân viên; đối chiếu vector khuôn mặt và xác minh thử thách camera trực tiếp."
+FACE_CONSENT_PURPOSE = (
+    "Chấm công nhân viên; đối chiếu vector khuôn mặt và xác minh thử thách camera trực tiếp."
+)
 if not 0.0 <= FACE_MATCH_THRESHOLD <= 1.0:
     raise ValueError("FACE_MATCH_THRESHOLD must be between 0 and 1")
 if not 0.0 <= FACE_ANTISPOOF_THRESHOLD <= 1.0 or not 0.0 <= FACE_LIVENESS_THRESHOLD <= 1.0:

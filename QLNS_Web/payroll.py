@@ -66,7 +66,11 @@ def summarize_attendance(
     present, excused, so_muon, phut_tc = set(), set(), 0, 0
     gio_vao_chuan = _hm(_to_time(config.GIO_VAO_CHUAN))
     gio_ra_chuan = _hm(_to_time(config.GIO_RA_CHUAN))
-    work_weekdays = set(work_weekdays) if work_weekdays is not None else set(range(7)) - set(config.NGAY_NGHI_TUAN)
+    work_weekdays = (
+        set(work_weekdays)
+        if work_weekdays is not None
+        else set(range(7)) - set(config.NGAY_NGHI_TUAN)
+    )
     scheduled_shifts = scheduled_shifts or {}
     holidays = set(holidays or ())
 
@@ -83,7 +87,9 @@ def summarize_attendance(
         tv, tr = _to_time(gio_vao), _to_time(gio_ra)
         shifts = scheduled_shifts.get(d, ())
         if shifts and tv:
-            start_time, grace_minutes = min(shifts, key=lambda item: _hm(_to_time(item[0]) or time.min))
+            start_time, grace_minutes = min(
+                shifts, key=lambda item: _hm(_to_time(item[0]) or time.min)
+            )
             shift_threshold = (_hm(_to_time(start_time)) + int(grace_minutes or 0)) % 1440
             is_late = _hm(tv) > shift_threshold
         else:
@@ -105,7 +111,9 @@ def summarize_attendance(
     end = last if last < today else today - timedelta(days=1)
     nghi_kp, d = 0, start
     while d <= end:
-        expected_workday = d in scheduled_shifts if scheduled_shifts else d.weekday() in work_weekdays
+        expected_workday = (
+            d in scheduled_shifts if scheduled_shifts else d.weekday() in work_weekdays
+        )
         if expected_workday and d not in holidays and d not in present and d not in excused:
             nghi_kp += 1
         d += timedelta(days=1)
@@ -147,6 +155,7 @@ def summarize_attendance_event_hours(database, year, month):
     )[1]
     return {int(employee_id): float(hours or 0) for employee_id, hours in rows}
 
+
 def calculate_payroll(
     base_salary,
     days,
@@ -161,18 +170,19 @@ def calculate_payroll(
     attendance_bonus_min_days=None,
 ):
     """Tính các khoản lương từ số liệu công đã tổng hợp và chính sách kỳ lương."""
-    standard_workdays = standard_workdays or config.CONG_CHUAN
-    hours_per_workday = hours_per_workday or config.GIO_LAM_NGAY
-    attendance_bonus_min_days = attendance_bonus_min_days or config.CHUYEN_CAN_SO_NGAY
+    if standard_workdays is None:
+        standard_workdays = config.CONG_CHUAN
+    if hours_per_workday is None:
+        hours_per_workday = config.GIO_LAM_NGAY
+    if attendance_bonus_min_days is None:
+        attendance_bonus_min_days = config.CHUYEN_CAN_SO_NGAY
     daily = float(base_salary or 0) / standard_workdays
     attendance_bonus = (
         round(float(base_salary or 0) * bonus_rate)
         if (days or 0) >= attendance_bonus_min_days
         else 0
     )
-    overtime_pay = round(
-        float(overtime_hours or 0) * daily / hours_per_workday * overtime_factor
-    )
+    overtime_pay = round(float(overtime_hours or 0) * daily / hours_per_workday * overtime_factor)
     late_deduction = round((late_count or 0) * config.MUON_TRU_NGAY * daily)
     unpaid_deduction = round((unpaid_days or 0) * config.NGHI_KP_TRU_NGAY * daily)
     deductions = late_deduction + unpaid_deduction
@@ -193,10 +203,9 @@ def calculate_payroll(
         total,
     )
 
+
 def get_period_status(database, year, month):
-    rows = database.query(
-        "SELECT TrangThai FROM LuongKy WHERE Nam=? AND Thang=?", (year, month)
-    )[1]
+    rows = database.query("SELECT TrangThai FROM LuongKy WHERE Nam=? AND Thang=?", (year, month))[1]
     return rows[0][0] if rows else "Nháp"
 
 
@@ -216,7 +225,9 @@ def lock_period(database, year, month, username, reason):
     )
 
 
-def apply_month_rules(database, year, month, bonus_rate, overtime_factor, old_rules, reason, username):
+def apply_month_rules(
+    database, year, month, bonus_rate, overtime_factor, old_rules, reason, username
+):
     rows = database.query(
         "SELECT MaNV,LuongCB,NgayCong,GioTangCa,SoLanMuon,SoNgayNghiKP,ISNULL(ThuongThem,0) FROM Luong WHERE Nam=? AND Thang=?",
         (year, month),
@@ -224,29 +235,68 @@ def apply_month_rules(database, year, month, bonus_rate, overtime_factor, old_ru
     updates = []
     for manv, base_salary, days, overtime_hours, late_count, unpaid_days, extra_bonus in rows:
         bonus, overtime, late, unpaid, deductions, total = calculate_payroll(
-            base_salary, days, overtime_hours, late_count, unpaid_days,
-            bonus_rate, overtime_factor, extra_bonus,
+            base_salary,
+            days,
+            overtime_hours,
+            late_count,
+            unpaid_days,
+            bonus_rate,
+            overtime_factor,
+            extra_bonus,
         )
-        updates.append((bonus, overtime, bonus + overtime, late, unpaid, deductions, total, manv, month, year))
-    database.execute_batches([
-        (
-            "IF NOT EXISTS(SELECT 1 FROM LuongKy WITH(UPDLOCK,HOLDLOCK) WHERE Nam=? AND Thang=?) INSERT INTO LuongKy(Nam,Thang,TrangThai) VALUES(?, ?, N'Nháp')",
-            [(year, month, year, month)],
-        ),
-        (
-            "IF EXISTS(SELECT 1 FROM LuongCauHinhThang WHERE Nam=? AND Thang=?) UPDATE LuongCauHinhThang SET TyLeThuongCC=?,HeSoTangCa=? WHERE Nam=? AND Thang=? ELSE INSERT INTO LuongCauHinhThang(Nam,Thang,TyLeThuongCC,HeSoTangCa) VALUES(?,?,?,?)",
-            [(year, month, bonus_rate, overtime_factor, year, month, year, month, bonus_rate, overtime_factor)],
-        ),
-        ("UPDATE Luong SET ThuongCC=?,TienTangCa=?,PhuCap=?,TruMuon=?,TruNghiKP=?,KhauTru=?,TongLuong=? WHERE MaNV=? AND Thang=? AND Nam=?", updates),
-        (
-            "INSERT INTO NhatKyLuong(MaNV,Thang,Nam,HanhDong,GiaTriCu,GiaTriMoi,LyDo,NguoiThucHien) VALUES(NULL,?,?,N'Điều chỉnh chung tháng',?,?,?,?)",
-            [(month, year, json.dumps(old_rules, ensure_ascii=False), json.dumps({"TyLeThuongCC": bonus_rate * 100, "HeSoTangCa": overtime_factor}, ensure_ascii=False), reason, username)],
-        ),
-        (
-            "UPDATE LuongKy SET TinhLuc=SYSUTCDATETIME(),TinhBoi=?,PhienBan=PhienBan+1 WHERE Nam=? AND Thang=? AND TrangThai=N'Nháp'; IF @@ROWCOUNT<>1 THROW 50005,'Kỳ lương không còn ở trạng thái nháp.',1",
-            [(username, year, month)],
-        ),
-    ])
+        updates.append(
+            (bonus, overtime, bonus + overtime, late, unpaid, deductions, total, manv, month, year)
+        )
+    database.execute_batches(
+        [
+            (
+                "IF NOT EXISTS(SELECT 1 FROM LuongKy WITH(UPDLOCK,HOLDLOCK) WHERE Nam=? AND Thang=?) INSERT INTO LuongKy(Nam,Thang,TrangThai) VALUES(?, ?, N'Nháp')",
+                [(year, month, year, month)],
+            ),
+            (
+                "IF EXISTS(SELECT 1 FROM LuongCauHinhThang WHERE Nam=? AND Thang=?) UPDATE LuongCauHinhThang SET TyLeThuongCC=?,HeSoTangCa=? WHERE Nam=? AND Thang=? ELSE INSERT INTO LuongCauHinhThang(Nam,Thang,TyLeThuongCC,HeSoTangCa) VALUES(?,?,?,?)",
+                [
+                    (
+                        year,
+                        month,
+                        bonus_rate,
+                        overtime_factor,
+                        year,
+                        month,
+                        year,
+                        month,
+                        bonus_rate,
+                        overtime_factor,
+                    )
+                ],
+            ),
+            (
+                "UPDATE Luong SET ThuongCC=?,TienTangCa=?,PhuCap=?,TruMuon=?,TruNghiKP=?,KhauTru=?,TongLuong=? WHERE MaNV=? AND Thang=? AND Nam=?",
+                updates,
+            ),
+            (
+                "INSERT INTO NhatKyLuong(MaNV,Thang,Nam,HanhDong,GiaTriCu,GiaTriMoi,LyDo,NguoiThucHien) VALUES(NULL,?,?,N'Điều chỉnh chung tháng',?,?,?,?)",
+                [
+                    (
+                        month,
+                        year,
+                        json.dumps(old_rules, ensure_ascii=False),
+                        json.dumps(
+                            {"TyLeThuongCC": bonus_rate * 100, "HeSoTangCa": overtime_factor},
+                            ensure_ascii=False,
+                        ),
+                        reason,
+                        username,
+                    )
+                ],
+            ),
+            (
+                "UPDATE LuongKy SET TinhLuc=SYSUTCDATETIME(),TinhBoi=?,PhienBan=PhienBan+1 WHERE Nam=? AND Thang=? AND TrangThai=N'Nháp'; IF @@ROWCOUNT<>1 THROW 50005,'Kỳ lương không còn ở trạng thái nháp.',1",
+                [(username, year, month)],
+            ),
+        ]
+    )
+
 
 def reopen_period(database, year, month, username, reason):
     database.execute(
