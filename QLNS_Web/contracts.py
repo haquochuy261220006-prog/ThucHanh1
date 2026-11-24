@@ -184,10 +184,10 @@ def admin_required(f):
     def w(*a, **kw):
         u = session.get("user")
         if not u:
-            return redirect(url_for("login"))
+            return redirect(url_for("accounts.login"))
         if not role_can(u.get("role"), "contracts.view"):
             flash("Chức năng này dành cho quản trị viên.", "error")
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("dashboard.dashboard"))
         return f(*a, **kw)
 
     return w
@@ -1392,7 +1392,7 @@ def mau_hop_dong():
             )
     except Exception as e:
         flash(_safe_contract_error(e, "Không thể tải hoặc xử lý hợp đồng mẫu."), "error")
-    return redirect(url_for("module", key="hopdong"))
+    return redirect(url_for("departments.module", key="hopdong"))
 
 
 def _opts_from_form(f):
@@ -1524,7 +1524,7 @@ def tai_tep_hop_dong(ma_tep):
 def cua_toi():
     user = session["user"]
     if role_can(user.get("role"), "contracts.view"):
-        return redirect(url_for("module", key="hopdong"))
+        return redirect(url_for("departments.module", key="hopdong"))
     manv = int(user.get("manv") or 0)
     if not manv:
         return "Tài khoản chưa được gắn với hồ sơ nhân viên.", 403

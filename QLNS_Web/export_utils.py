@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import io
 import os
 from decimal import Decimal

@@ -2,7 +2,11 @@ FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    APP_ENV=production
+    APP_ENV=production \
+    DB_DRIVER="ODBC Driver 18 for SQL Server" \
+    DB_WINDOWS_AUTH=false \
+    DB_ENCRYPT=yes \
+    DB_TRUST_SERVER_CERTIFICATE=no
 
 WORKDIR /app
 

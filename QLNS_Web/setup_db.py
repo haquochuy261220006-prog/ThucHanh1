@@ -137,7 +137,7 @@ def _create_database():
 
 
 def _provision_core_schema():
-    from app import ensure_schema
+    from schema_setup import ensure_schema
 
     for name, ddl in CORE_TABLES:
         db_sql = f"IF OBJECT_ID(N'dbo.{name}',N'U') IS NULL {ddl}"
@@ -169,9 +169,13 @@ def _seed_defaults():
 
 
 def main():
+    from schema_migrations import begin_migration, finish_migration
+
     _create_database()
+    begin_migration(db)
     _provision_core_schema()
     _seed_defaults()
+    finish_migration(db)
     print(f"Database {DATABASE} đã sẵn sàng cho 8 phân hệ.")
 
 

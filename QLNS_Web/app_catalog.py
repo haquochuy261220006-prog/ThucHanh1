@@ -1,4 +1,4 @@
-﻿MODULES = {
+MODULES = {
     "nhanvien": {
         "title": "Nhân viên",
         "table": "NhanVien",

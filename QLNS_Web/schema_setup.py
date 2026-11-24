@@ -1,4 +1,4 @@
-﻿import re
+import re
 import unicodedata
 
 import db
@@ -100,7 +100,7 @@ def ensure_schema():
         "SELECT TOP (1) @roleCheck=name FROM sys.check_constraints "
         "WHERE parent_object_id=OBJECT_ID('dbo.TaiKhoan') AND definition LIKE '%VaiTro%'; "
         "IF @roleCheck IS NOT NULL BEGIN "
-        "SET @roleSql=N'ALTER TABLE dbo.TaiKhoan DROP CONSTRAINT '+QUOTENAME(@roleCheck); "
+        "SET @roleSql=N'ALTER TABLE dbo.TaiKhoan DROP CONSTRAINT ['+REPLACE(@roleCheck,N']',N']]')+N']'; "
         "EXEC sys.sp_executesql @roleSql; END; "
         "ALTER TABLE dbo.TaiKhoan ADD CONSTRAINT CK_TaiKhoan_VaiTro "
         "CHECK(VaiTro IN (N'QuanTri',N'QuanTriHeThong',N'HR',N'KeToan',N'QuanLy',N'NhanVien')); END"
@@ -193,7 +193,7 @@ def ensure_schema():
         "JOIN sys.columns c ON c.default_object_id=dc.object_id "
         "WHERE dc.parent_object_id=OBJECT_ID(N'dbo.HopDong') AND c.name=N'TrangThai'; "
         "IF @df IS NOT NULL BEGIN "
-        "SET @sql=N'ALTER TABLE dbo.HopDong DROP CONSTRAINT '+QUOTENAME(@df); "
+        "SET @sql=N'ALTER TABLE dbo.HopDong DROP CONSTRAINT ['+REPLACE(@df,N']',N']]')+N']'; "
         "EXEC sys.sp_executesql @sql; END; "
         "ALTER TABLE dbo.HopDong ADD CONSTRAINT DF_HopDong_TrangThai "
         "DEFAULT N'Bản nháp' FOR TrangThai"
@@ -332,7 +332,7 @@ def ensure_schema():
         "IF OBJECT_ID('PayrollItem','U') IS NULL CREATE TABLE PayrollItem(MaKhoan BIGINT IDENTITY PRIMARY KEY,MaNV INT NOT NULL REFERENCES NhanVien(MaNV),Nam INT NOT NULL,Thang INT NOT NULL,Loai NVARCHAR(20) NOT NULL,Ten NVARCHAR(120) NOT NULL,SoTien DECIMAL(18,0) NOT NULL,ChiuThue BIT NOT NULL DEFAULT 0,CanCuBaoHiem BIT NOT NULL DEFAULT 0,DuocTruThue BIT NOT NULL DEFAULT 0,LyDo NVARCHAR(500) NOT NULL,NguoiTao NVARCHAR(50) NOT NULL,TaoLuc DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),CHECK(Thang BETWEEN 1 AND 12),CHECK(Loai IN (N'earning',N'reduction',N'deduction')),CHECK(SoTien>=0))"
     )
     db.execute(
-        "IF OBJECT_ID('PayrollItem','U') IS NOT NULL AND (EXISTS(SELECT 1 FROM PayrollItem WHERE Loai=N'penalty') OR NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('PayrollItem') AND name=N'CK_PayrollItem_Loai')) BEGIN DECLARE @c sysname,@sql nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('PayrollItem') AND definition LIKE '%Loai%'; OPEN c; FETCH NEXT FROM c INTO @c; WHILE @@FETCH_STATUS=0 BEGIN SET @sql=N'ALTER TABLE PayrollItem DROP CONSTRAINT '+QUOTENAME(@c); EXEC sp_executesql @sql; FETCH NEXT FROM c INTO @c; END; CLOSE c; DEALLOCATE c; UPDATE PayrollItem SET Loai=N'reduction' WHERE Loai=N'penalty'; ALTER TABLE PayrollItem ADD CONSTRAINT CK_PayrollItem_Loai CHECK(Loai IN (N'earning',N'reduction',N'deduction')); END"
+        "IF OBJECT_ID('PayrollItem','U') IS NOT NULL AND (EXISTS(SELECT 1 FROM PayrollItem WHERE Loai=N'penalty') OR NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('PayrollItem') AND name=N'CK_PayrollItem_Loai')) BEGIN DECLARE @c sysname,@sql nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('PayrollItem') AND definition LIKE '%Loai%'; OPEN c; FETCH NEXT FROM c INTO @c; WHILE @@FETCH_STATUS=0 BEGIN SET @sql=N'ALTER TABLE PayrollItem DROP CONSTRAINT ['+REPLACE(@c,N']',N']]')+N']'; EXEC sp_executesql @sql; FETCH NEXT FROM c INTO @c; END; CLOSE c; DEALLOCATE c; UPDATE PayrollItem SET Loai=N'reduction' WHERE Loai=N'penalty'; ALTER TABLE PayrollItem ADD CONSTRAINT CK_PayrollItem_Loai CHECK(Loai IN (N'earning',N'reduction',N'deduction')); END"
     )
     db.execute(
         "IF OBJECT_ID('PayrollResultSnapshot','U') IS NULL CREATE TABLE PayrollResultSnapshot(MaLuong INT NOT NULL PRIMARY KEY REFERENCES Luong(MaLuong) ON DELETE CASCADE,MaChinhSach BIGINT NOT NULL REFERENCES PayrollPolicyVersion(MaChinhSach),QuyTacJson NVARCHAR(MAX) NOT NULL,DuLieuDauVaoJson NVARCHAR(MAX) NOT NULL,ChiTietTinhJson NVARCHAR(MAX) NOT NULL,TaoLuc DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),CHECK(ISJSON(QuyTacJson)=1),CHECK(ISJSON(DuLieuDauVaoJson)=1),CHECK(ISJSON(ChiTietTinhJson)=1))"

@@ -4,7 +4,7 @@ This project can run as a Linux Flask app in Azure App Service and use Azure SQL
 
 ## 1. Prepare a database copy
 
-Create a separate staging database first and migrate a backup/copy of `NHANSU_PY` into it. Do not point staging at the live local database. Check SQL Server to Azure SQL compatibility and run the application's first-request schema setup against the staging copy before moving real users. Do not run `setup_db.py` against an existing production database: it creates a database and sample admin account.
+Create a separate staging database first and migrate a backup/copy of `NHANSU_PY` into it. Do not point staging at the live local database. Check SQL Server to Azure SQL compatibility and run `migrate_db.py` against the staging copy before moving real users. The web process only checks the migration marker; it does not alter schema. Do not run `setup_db.py` against an existing production database: it creates a database and sample admin account.
 
 Keep Azure SQL inaccessible from the public internet where possible. Prefer a private endpoint and App Service VNet integration. If using a public endpoint temporarily, allow only the web app's outbound IPs and a known administrator IP; do not enable the broad “Allow Azure services” rule. Azure SQL denies connections by default and supports private network access: <https://learn.microsoft.com/en-us/azure/azure-sql/database/network-access-controls-overview?view=azuresql>.
 
@@ -43,7 +43,7 @@ Add these in **App Service → Settings → Environment variables**. Values show
 | `FACE_ENCRYPTION_KEY` | Fernet key; back it up securely and keep it unchanged |
 | `WEBSITES_PORT` | `8000` |
 
-Set only the integrations you use, such as `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `AI_PROVIDER`, and the corresponding AI key. Use Key Vault references for production secrets if available. Azure SQL App Service Linux commonly includes ODBC Driver 17 and 18; this project now reads the driver and connection options from environment settings.
+Set only the integrations you use, such as `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `AI_PROVIDER`, and the corresponding AI key. Use Key Vault references for production secrets if available. The container installs ODBC Driver 18; this project reads the driver and connection options from environment settings.
 
 Do not add migration credentials to App Service. Stop the web app, then from a protected one-off runner connect to the staging database using `DB_MIGRATION_USER`/`DB_MIGRATION_PASSWORD`, and set `DB_WEB_USER` to the existing database principal for the app. Run `python migrate_db.py`, then restart the web app. The migration identity needs the DDL/data-update permissions used by the upgrade; the web identity must not have schema-alteration permissions. The app returns HTTP 503 until the required schema version is marked complete. Follow [INTEGRATION_TEST_PLAN.md](INTEGRATION_TEST_PLAN.md) against staging before production.
 
