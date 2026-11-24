@@ -83,13 +83,13 @@
     <div class="panel-head">
         <div>
             <h2>Điều chỉnh chung cả tháng</h2>
-            <p>Mức thưởng chuyên cần: {{ '%.2f'|format(attendance_bonus_percent) }}% lương cơ bản khi đủ {{ cfg.CHUYEN_CAN_SO_NGAY }} ngày công. Tiền tăng ca tính theo lương giờ nhân hệ số chung.</p>
+            <p>Mức thưởng chuyên cần: {{ '%.2f'|format(attendance_bonus_percent) }}% lương cơ bản khi đủ {{ cfg.CHUYEN_CAN_SO_NGAY }} ngày công. Tăng ca/ngày đêm dùng mức riêng theo loại ngày trong công thức lương.</p>
         </div>
     </div>
     {% if period_status == "Nháp" and not active_policy %}
         <form method="post"
               class="data-form"
-              onsubmit="return confirm('Áp dụng mức thưởng chuyên cần và hệ số tăng ca cho toàn bộ nhân viên tháng {{ month }}/{{ year }}?')">
+              onsubmit="return confirm('Áp dụng mức thưởng chuyên cần cho toàn bộ nhân viên tháng {{ month }}/{{ year }}?')">
             <input type="hidden" name="action" value="adjust_common"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}">
             <div class="form-grid">
                 <div class="field">
@@ -101,16 +101,6 @@
                                                                                                         step="0.01"
                                                                                                         required
                                                                                                         value="{{ '%.2f'|format(attendance_bonus_percent) }}">
-                </div>
-                <div class="field">
-                    <label for="overtime-factor">Hệ số tiền tăng ca</label><input id="overtime-factor"
-                                                                                  type="number"
-                                                                                  name="HeSoTangCa"
-                                                                                  min="0"
-                                                                                  max="10"
-                                                                                  step="0.01"
-                                                                                  required
-                                                                                  value="{{ '%.2f'|format(overtime_factor) }}">
                 </div>
                 <div class="field">
                     <label for="common-reason">Lý do áp dụng *</label>
@@ -126,7 +116,7 @@
             </div>
         </form>
     {% endif %}
-    {% if period_status == "Nháp" and active_policy %}<p>Thưởng chuyên cần và hệ số tăng ca được cố định trong phiên bản chính sách đang áp dụng. Tạo phiên bản mới nếu chính sách nội bộ thay đổi.</p>{% endif %}
+    {% if period_status == "Nháp" and active_policy %}<p>Thưởng chuyên cần và các mức tăng ca/ngày đêm được cố định trong phiên bản chính sách đang áp dụng. Tạo phiên bản mới nếu chính sách nội bộ thay đổi.</p>{% endif %}
 </div>
 <div class="panel">
     <div class="panel-head">
@@ -167,7 +157,7 @@
                                                                                          rows="15"
                                                                                          required
                                                                                          spellcheck="false"
-                                                                                         placeholder='{"base_salary_taxable":true,"base_salary_insurable":true,"salary_proration_basis":"calendar_days","standard_workdays_per_month":0,"hours_per_workday":0,"attendance_bonus_min_days":0,"attendance_bonus_rate":0,"overtime_factor":0,"components":{"attendance_bonus":{"taxable":false,"insurable":false},"overtime":{"taxable":false,"insurable":false},"extra_bonus":{"taxable":false,"insurable":false},"payroll_deductions":{"taxable":false,"insurable":false}},"tax":{"personal_deduction":0,"dependent_deduction":0,"employee_contributions_reduce_taxable_base":false,"allow_other_tax_deductions":false,"brackets":[{"up_to":null,"rate":0}],"nonresident_flat_rate":0},"insurance":{"limits":{"bhxh":{"minimum_base":null,"maximum_base":null},"bhyt":{"minimum_base":null,"maximum_base":null},"bhtn":{"minimum_base":null,"maximum_base":null},"tnld_bnn":{"minimum_base":null,"maximum_base":null}},"employee_rates":{"bhxh":0,"bhyt":0,"bhtn":0},"employer_rates":{"bhxh":0,"bhyt":0,"bhtn":0,"tnld_bnn":0}}}'></textarea><small>Ví dụ chỉ biểu thị cấu trúc và dùng số 0 để đánh dấu phải điền, không phải chính sách hợp pháp/đã duyệt. Điền số liệu đã được HR/kế toán rà soát theo nhóm hợp đồng, đối tượng và thời kỳ. Giới hạn căn cứ đóng đặt riêng cho từng loại bảo hiểm. Phải có bậc thuế cuối với up_to=null.</small>
+                                                                                         >{"base_salary_taxable":true,"base_salary_insurable":true,"salary_proration_basis":"calendar_days","standard_workdays_per_month":22,"hours_per_workday":8,"attendance_bonus_min_days":22,"attendance_bonus_rate":0,"overtime_factor":1.5,"overtime_rates":{"ordinary_day":1.5,"weekly_rest_day":2,"holiday":3,"night":0.3,"night_overtime_extra":0.2},"components":{"attendance_bonus":{"taxable":true,"insurable":false},"overtime":{"taxable":true,"insurable":false},"extra_bonus":{"taxable":true,"insurable":false},"payroll_deductions":{"taxable":false,"insurable":false}},"tax":{"personal_deduction":15500000,"dependent_deduction":6200000,"employee_contributions_reduce_taxable_base":true,"allow_other_tax_deductions":false,"brackets":[{"up_to":10000000,"rate":0.05},{"up_to":30000000,"rate":0.10},{"up_to":60000000,"rate":0.20},{"up_to":100000000,"rate":0.30},{"up_to":null,"rate":0.35}],"nonresident_flat_rate":0.20},"insurance":{"limits":{"bhxh":{"minimum_base":null,"maximum_base":50600000},"bhyt":{"minimum_base":null,"maximum_base":50600000},"bhtn":{"minimum_base":null,"maximum_base":50600000},"tnld_bnn":{"minimum_base":null,"maximum_base":50600000}},"employee_rates":{"bhxh":0.08,"bhyt":0.015,"bhtn":0.01},"employer_rates":{"bhxh":0.175,"bhyt":0.03,"bhtn":0.01,"tnld_bnn":0.005}}}</textarea><small>Mẫu nhập sẵn theo quy tắc bạn gửi với 22 ngày công; đổi thành 26 nếu quy chế công ty dùng 26. Các khoản chịu thuế/đóng bảo hiểm và phần đóng của doanh nghiệp vẫn cần HR/kế toán rà soát trước khi duyệt. Điền số liệu đã được HR/kế toán rà soát theo nhóm hợp đồng, đối tượng và thời kỳ. Giới hạn căn cứ đóng đặt riêng cho từng loại bảo hiểm. Phải có bậc thuế cuối với up_to=null.</small>
                     </div>
                 </div>
                 <button class="btn secondary" type="submit">Lưu bản nháp</button>
@@ -320,7 +310,7 @@
                 <div class="panel-head">
                     <div>
                         <h2>Bảng lương tháng {{ month }}/{{ year }}</h2>
-                        <p>Lương ngày = Lương cơ bản ÷ {{ standard }}. Đi làm ≥ {{ cfg.CHUYEN_CAN_SO_NGAY }} ngày: +{{ '%.2f'|format(attendance_bonus_percent) }}% lương cơ bản. Đi muộn được ghi nhận riêng, không tự động khấu trừ lương. Mỗi ngày nghỉ không phép: trừ {{ cfg.NGHI_KP_TRU_NGAY }} ngày lương. Tăng ca sau {{ cfg.GIO_RA_CHUAN }}: ×{{ '%.2f'|format(overtime_factor) }} lương giờ.</p>
+                        <p>Lương giờ tăng ca = Lương cơ bản ÷ ({{ standard }} ngày công × 8 giờ). Tăng ca: ngày thường ×1,5; ngày nghỉ tuần ×2; lễ/Tết ×3. Làm đêm 22:00–06:00 được cộng 30%; OT ban đêm cộng thêm 20%.</p>
                         <p>Giờ ghi nhận là tổng các cặp chấm vào/ra hoàn tất, lưu tại lần tính lương để đối soát; khoản tăng ca tính tiền vẫn lấy từ yêu cầu đã được xác nhận. Kỳ cũ chưa có số giờ này sẽ để trống.</p>
                     </div>
                     {% if period_status == "Đã khóa" %}
@@ -385,7 +375,7 @@
                                 <tr>
                                     <td>{{ person[1] }}</td>
                                     <td><a class="action-link"
-                                           href="{{ url_for('salary_slip', manv=person[0], year=year, month=month) }}">Xem phiếu lương</a></td>
+                                           href="{{ url_for('payroll.salary_slip', manv=person[0], year=year, month=month) }}">Xem phiếu lương</a></td>
                                 </tr>
                             {% else %}
                                 <tr>

@@ -39,10 +39,21 @@
                         <th>Giờ tăng ca</th>
                         <td>{{ row[7] or 0 }}</td>
                     </tr>
-                    <tr>
-                        <th>Tiền tăng ca</th>
-                        <td>{{ '{:,.0f}'.format(row[8] or 0) }} đ</td>
-                    </tr>
+                    {% if payroll_inputs and 'overtime_pay' in payroll_inputs and 'night_premium' in payroll_inputs %}
+                        <tr>
+                            <th>Tiền làm thêm giờ</th>
+                            <td>{{ '{:,.0f}'.format(payroll_inputs.get('overtime_pay', 0) or 0) }} đ</td>
+                        </tr>
+                        <tr>
+                            <th>Phụ cấp làm đêm ({{ payroll_inputs.get('night_hours', 0) }} giờ)</th>
+                            <td>{{ '{:,.0f}'.format(payroll_inputs.get('night_premium', 0) or 0) }} đ</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th>Tiền OT và làm đêm</th>
+                            <td>{{ '{:,.0f}'.format(row[8] or 0) }} đ</td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <th>Thưởng thêm</th>
                         <td>{{ '{:,.0f}'.format(row[13] or 0) }} đ</td>

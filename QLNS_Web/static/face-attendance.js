@@ -248,12 +248,11 @@
                 }
                 throw error;
             }
-            const result = await post('/api/chamcong/face/confirm', {
-                confirmation_token: match.confirmation_token,
-            });
+            // Backend ghi nhận lượt vào/ra ngay trong /scan và trả kết quả cuối cùng.
+            // Không gọi /confirm: route này không tồn tại và có thể khiến UI báo lỗi giả.
             attendanceRecorded = true;
-            showAttendanceSuccess(result.message);
-            return result;
+            showAttendanceSuccess(match.message || 'Đã ghi nhận chấm công.');
+            return match;
         } finally {
             if (cameraToggle) cameraToggle.disabled = attendanceRecorded || attendanceRejected;
             if (!keepPreviewOpen && !attendanceRecorded && !attendanceRejected) stopCamera();

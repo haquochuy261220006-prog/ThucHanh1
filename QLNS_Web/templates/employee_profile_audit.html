@@ -8,7 +8,7 @@
             <p>{{ employee[1] }} · Mã {{ employee[2] }}. Nhật ký chỉ ghi tên trường, không lưu giá trị CCCD, liên hệ hoặc lương.</p>
         </div>
         <a class="btn secondary"
-           href="{{ url_for('module', key='nhanvien') if admin else url_for('employee_records', manv=employee[0]) }}">Quay lại hồ sơ</a>
+           href="{{ url_for('departments.module', key='nhanvien') if admin else url_for('employees.employee_records', manv=employee[0]) }}">Quay lại hồ sơ</a>
     </div>
     <div class="panel">
         <div class="table-wrap">

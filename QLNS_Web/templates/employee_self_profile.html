@@ -8,8 +8,8 @@
             <p>Mã nhân viên: {{ profile.MaNVHT }}. Bạn có thể sửa thông tin cá nhân và ảnh hồ sơ.</p>
         </div>
         <div class="heading-actions">
-            <a class="btn secondary" href="{{ url_for('employee_profile_audit', manv=profile.MaNV) }}">Nhật ký hồ sơ</a>
-            <a class="btn secondary" href="{{ url_for('chamcong') }}">Quay lại chấm công</a>
+            <a class="btn secondary" href="{{ url_for('employees.employee_profile_audit', manv=profile.MaNV) }}">Nhật ký hồ sơ</a>
+            <a class="btn secondary" href="{{ url_for('attendance.chamcong') }}">Quay lại chấm công</a>
         </div>
     </div>
 

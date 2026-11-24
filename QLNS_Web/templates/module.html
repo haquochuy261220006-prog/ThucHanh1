@@ -1,11 +1,11 @@
-﻿{% extends "base.html" %}{% from '_export_form.html' import export_form %}{% block title %}{{ m.title }} · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}{% from '_export_form.html' import export_form %}{% block title %}{{ m.title }} · QLNS{% endblock %}{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">QUẢN TRỊ DỮ LIỆU</span>
         <h1>{{ m.title }}</h1>
         <p>Thêm mới, cập nhật và tìm kiếm thông tin {{ m.title|lower }}.</p>
     </div>
-    <div class="actions">{% if key=="nhanvien" and can_manage and not edit and not request.args.get('add') %}<a class="btn primary" href="{{ url_for('module',key=key,add=1) }}">＋ Thêm nhân viên</a>{% endif %}{% if key=="hopdong" and can_manage %}<a class="btn primary" href="{{ url_for('contracts.soan') }}">✎　Soạn hợp đồng</a>{% endif %}{% if can_export %}{{ export_form(key,{'q':request.args.get('q','')}) }}{% endif %}</div>
+    <div class="actions">{% if key=="nhanvien" and can_manage and not edit and not request.args.get('add') %}<a class="btn primary" href="{{ url_for('departments.module',key=key,add=1) }}">＋ Thêm nhân viên</a>{% endif %}{% if key=="hopdong" and can_manage %}<a class="btn primary" href="{{ url_for('contracts.soan') }}">✎　Soạn hợp đồng</a>{% endif %}{% if can_export %}{{ export_form(key,{'q':request.args.get('q','')}) }}{% endif %}</div>
 </div>
 {% if key=="hopdong" and contract_expiry_alerts %}<div class="panel"><div class="panel-head"><div><h2>Cảnh báo hợp đồng sắp hết hạn</h2><p>Hợp đồng có ngày kết thúc trong vòng 90 ngày tới.</p></div></div><div class="table-wrap"><table><thead><tr><th>Mã HĐ</th><th>Nhân viên</th><th>Loại</th><th>Ngày kết thúc</th><th>Còn lại</th><th></th></tr></thead><tbody>{% for item in contract_expiry_alerts %}<tr><td>{{ item[0] }}</td><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td>{% if item[4] <= 30 %}≤ 30 ngày{% elif item[4] <= 60 %}31–60 ngày{% else %}61–90 ngày{% endif %}</td><td><a class="action-link"
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           href="{{ url_for('contracts.vong_doi',mahd=item[0]) }}">Xem vòng đời</a></td></tr>{% endfor %}</tbody></table></div></div>{% endif %}
@@ -94,9 +94,9 @@
                     <p>{% if assignment_only %}Quản trị viên chỉ có thể thay đổi phòng ban, chức vụ và vị trí công việc.{% else %}Các trường có dấu * là bắt buộc.{% endif %}</p>
                 </div>
                 {% if edit %}
-                    <a class="btn secondary" href="{{ url_for('module',key=key) }}">Hủy sửa</a>{% endif %}
+                    <a class="btn secondary" href="{{ url_for('departments.module',key=key) }}">Hủy sửa</a>{% endif %}
                 {% if key=="nhanvien" and not edit %}<a class="btn secondary"
-                                                        href="{{ url_for('module',key=key) }}">Đóng biểu mẫu</a>{% endif %}
+                                                        href="{{ url_for('departments.module',key=key) }}">Đóng biểu mẫu</a>{% endif %}
             </div>
             <form method="post"
                   class="data-form"
@@ -133,7 +133,7 @@
                 <div class="form-grid">
                     {% for col,label,typ,required in form_fields %}
                         <div class="field">
-                            <label>{{ label }}{% if required %} *{% endif %}</label>{% if typ=="image" %}<input name="{{ col }}" type="file" accept="image/jpeg,image/png,image/webp">{% if edit and edit[col] %}<img src="{{ url_for('nhanvien_anh',manv=edit_id) }}"
+                            <label>{{ label }}{% if required %} *{% endif %}</label>{% if typ=="image" %}<input name="{{ col }}" type="file" accept="image/jpeg,image/png,image/webp">{% if edit and edit[col] %}<img src="{{ url_for('attendance.nhanvien_anh',manv=edit_id) }}"
                                                                                                                                                                                                                       alt="Ảnh hồ sơ hiện tại"
                                                                                                                                                                                                                       style="display:block;
                                                                                                                                                                                                                              width:96px;
@@ -158,7 +158,7 @@
 </div>
 <div class="form-actions">
     <button class="btn primary">{{'Lưu thay đổi' if edit else '＋ Thêm mới'}}</button>
-    <a class="btn secondary" href="{{ url_for('module',key=key) }}">Làm mới</a>
+    <a class="btn secondary" href="{{ url_for('departments.module',key=key) }}">Làm mới</a>
 </div>
 </form>
 </div>
@@ -191,9 +191,9 @@
                         {% endfor %}
                         <td class="actions">
                             {% if can_manage and (key!="hopdong" or row[6]=="Bản nháp") %}<a class="action-link"
-                                                                                             href="{{ url_for('module',key=key,edit=row[0]) }}">{{ 'Đổi chức vụ/phòng ban' if key=='nhanvien' and admin else 'Sửa' }}</a>{% endif %}{% if key=="nhanvien" and can_manage %}<a class="action-link"
-                                                                                                                                                                                                            href="{{ url_for('lich_su_cong_tac',manv=row[0]) }}">Lịch sử công tác</a><a class="action-link"
-                                                                                                                                                                                                                                                                                        href="{{ url_for('employee_records',manv=row[0]) }}">Hồ sơ điện tử</a>{% endif %}{% if key=="hopdong" and can_manage %}<a class="action-link"
+                                                                                             href="{{ url_for('departments.module',key=key,edit=row[0]) }}">{{ 'Đổi chức vụ/phòng ban' if key=='nhanvien' and admin else 'Sửa' }}</a>{% endif %}{% if key=="nhanvien" and can_manage %}<a class="action-link"
+                                                                                                                                                                                                            href="{{ url_for('employees.lich_su_cong_tac',manv=row[0]) }}">Lịch sử công tác</a><a class="action-link"
+                                                                                                                                                                                                                                                                                        href="{{ url_for('employees.employee_records',manv=row[0]) }}">Hồ sơ điện tử</a>{% endif %}{% if key=="hopdong" and can_manage %}<a class="action-link"
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      href="{{ url_for('contracts.soan',mahd=row[0]) }}">Soạn Word</a><a class="action-link"
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         href="{{ url_for('contracts.vong_doi',mahd=row[0]) }}">Vòng đời</a>{% endif %}
                             {% if can_manage and key!="hopdong" %}

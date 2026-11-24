@@ -1,6 +1,6 @@
 {% macro export_form(key, filters={}) -%}
     <form method="get"
-          action="{{ url_for('export',key=key) }}"
+          action="{{ url_for('reports.export',key=key) }}"
           class="actions"
           style="display:flex;
                  align-items:center;

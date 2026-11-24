@@ -7,7 +7,7 @@
             <p>Chọn hợp đồng, để AI soạn điều khoản, chỉnh sửa rồi tải về file Word.</p>
         </div>
         <div class="actions">
-            <span class="ai-badge {{'' if ai_on else 'off'}}">{{'AI đang bật · '+model if ai_on else 'Chưa có API key · dùng mẫu chuẩn'}}</span><a class="btn secondary" href="{{ url_for('module',key='hopdong') }}">←　Về Hợp đồng</a>
+            <span class="ai-badge {{'' if ai_on else 'off'}}">{{'AI đang bật · '+model if ai_on else 'Chưa có API key · dùng mẫu chuẩn'}}</span><a class="btn secondary" href="{{ url_for('departments.module',key='hopdong') }}">←　Về Hợp đồng</a>
             <a class="btn secondary" href="{{ url_for('contracts.ai_test') }}">⚡　Kiểm tra kết nối AI</a>
         </div>
     </div>

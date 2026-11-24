@@ -12,7 +12,7 @@
     <body>
         {% if session.get("user") %}
             <aside class="sidebar" id="primary-navigation" aria-label="Điều hướng chính">
-                <a class="brand" href="{{ url_for('dashboard') }}">
+                <a class="brand" href="{{ url_for('dashboard.dashboard') }}">
                     <span class="logo" aria-hidden="true">Q</span>
                     <span class="brand-copy"><strong>QUẢN TRỊ</strong><small>NHÂN SỰ & VẬN HÀNH</small></span>
                 </a>
@@ -21,93 +21,97 @@
                     {% set can_manage_people = role == 'QuanTri' or has_permission('employees.view') %}
                     {% if role == "QuanTri" %}
                         <div class="nav-label">TỔNG QUAN</div>
-                        <a class="nav{% if request.endpoint == 'dashboard' %} is-active{% endif %}"
-                           href="{{ url_for('dashboard') }}"><span class="nav-icon">⌂</span>Dashboard</a>
+                        <a class="nav{% if request.endpoint == 'dashboard.dashboard' %} is-active{% endif %}"
+                           href="{{ url_for('dashboard.dashboard') }}"><span class="nav-icon">⌂</span>Dashboard</a>
                     {% endif %}
                     {% if not admin and session.get("user", {}).get("manv") %}
                         <div class="nav-label">TÀI KHOẢN CỦA TÔI</div>
-                        <a class="nav{% if request.endpoint == 'employee_self_profile' %} is-active{% endif %}"
-                           href="{{ url_for('employee_self_profile') }}"><span class="nav-icon">♙</span>Hồ sơ cá nhân</a>
+                        <a class="nav{% if request.endpoint == 'employees.employee_self_profile' %} is-active{% endif %}"
+                           href="{{ url_for('employees.employee_self_profile') }}"><span class="nav-icon">♙</span>Hồ sơ cá nhân</a>
                     {% endif %}
                     {% if can_manage_people %}
                         <div class="nav-label">NHÂN VIÊN</div>
                         <a class="nav{% if request.path == '/nhanvien' %} is-active{% endif %}"
-                           href="{{ url_for('module',key='nhanvien') }}"><span class="nav-icon">♙</span>Hồ sơ nhân viên</a>
+                           href="{{ url_for('departments.module',key='nhanvien') }}"><span class="nav-icon">♙</span>Hồ sơ nhân viên</a>
                         {% if not admin and session.get("user", {}).get("manv") %}
-                            <a class="nav{% if request.endpoint == 'employee_records' %} is-active{% endif %}"
-                               href="{{ url_for('employee_records',manv=session.get('user',{}).get('manv')) }}"><span class="nav-icon">▤</span>Hồ sơ điện tử của tôi</a>
+                            <a class="nav{% if request.endpoint == 'employees.employee_records' %} is-active{% endif %}"
+                               href="{{ url_for('employees.employee_records',manv=session.get('user',{}).get('manv')) }}"><span class="nav-icon">▤</span>Hồ sơ điện tử của tôi</a>
                         {% endif %}
                     {% endif %}
                     {% if admin or has_permission("employees.view") %}
                         <div class="nav-label">PHÒNG BAN / CHỨC VỤ</div>
                         <a class="nav{% if request.path == '/phongban' %} is-active{% endif %}"
-                           href="{{ url_for('module',key='phongban') }}"><span class="nav-icon">▦</span>Phòng ban</a>
+                           href="{{ url_for('departments.module',key='phongban') }}"><span class="nav-icon">▦</span>Phòng ban</a>
                         {% if admin %}
                             <a class="nav{% if request.path == '/donvi' %} is-active{% endif %}"
-                               href="{{ url_for('module',key='donvi') }}"><span class="nav-icon">⌂</span>Đơn vị</a>
+                               href="{{ url_for('departments.module',key='donvi') }}"><span class="nav-icon">⌂</span>Đơn vị</a>
                             <a class="nav{% if request.path == '/vitri' %} is-active{% endif %}"
-                               href="{{ url_for('module',key='vitri') }}"><span class="nav-icon">▤</span>Vị trí công việc</a>
+                               href="{{ url_for('departments.module',key='vitri') }}"><span class="nav-icon">▤</span>Vị trí công việc</a>
                             <a class="nav{% if request.path == '/chucvu' %} is-active{% endif %}"
-                               href="{{ url_for('module',key='chucvu') }}"><span class="nav-icon">✳</span>Chức vụ</a>
-                            <a class="nav{% if request.endpoint == 'to_chuc' %} is-active{% endif %}"
-                               href="{{ url_for('to_chuc') }}"><span class="nav-icon">⌘</span>Sơ đồ tổ chức</a>
-                            <a class="nav{% if request.endpoint == 'dieuchuyen' %} is-active{% endif %}"
-                               href="{{ url_for('dieuchuyen') }}"><span class="nav-icon">⇄</span>Điều chuyển</a>
+                               href="{{ url_for('departments.module',key='chucvu') }}"><span class="nav-icon">✳</span>Chức vụ</a>
+                            <a class="nav{% if request.endpoint == 'departments.to_chuc' %} is-active{% endif %}"
+                               href="{{ url_for('departments.to_chuc') }}"><span class="nav-icon">⌘</span>Sơ đồ tổ chức</a>
+                            <a class="nav{% if request.endpoint == 'employees.dieuchuyen' %} is-active{% endif %}"
+                               href="{{ url_for('employees.dieuchuyen') }}"><span class="nav-icon">⇄</span>Điều chuyển</a>
                         {% endif %}
                     {% endif %}
                     <div class="nav-label">CHẤM CÔNG</div>
-                    <a class="nav{% if request.endpoint == 'chamcong' %} is-active{% endif %}"
-                       href="{{ url_for('chamcong') }}"><span class="nav-icon">◷</span>Chấm công và lịch sử</a>
-                    <a class="nav{% if request.endpoint == 'workforce_shifts' %} is-active{% endif %}"
-                       href="{{ url_for('workforce_shifts') }}"><span class="nav-icon">◴</span>Ca làm việc</a>
-                    <a class="nav{% if request.endpoint == 'overtime_requests' %} is-active{% endif %}"
-                       href="{{ url_for('overtime_requests') }}"><span class="nav-icon">◷</span>Đăng ký tăng ca</a>
+                    <a class="nav{% if request.endpoint == 'attendance.chamcong' %} is-active{% endif %}"
+                       href="{{ url_for('attendance.chamcong') }}"><span class="nav-icon">◷</span>Chấm công và lịch sử</a>
+                    <a class="nav{% if request.endpoint == 'attendance.workforce_shifts' %} is-active{% endif %}"
+                       href="{{ url_for('attendance.workforce_shifts') }}"><span class="nav-icon">◴</span>Ca làm việc</a>
+                    <a class="nav{% if request.endpoint == 'attendance.overtime_requests' %} is-active{% endif %}"
+                       href="{{ url_for('attendance.overtime_requests') }}"><span class="nav-icon">◷</span>Đăng ký tăng ca</a>
                     <div class="nav-label">NGHỈ PHÉP</div>
-                    <a class="nav{% if request.endpoint == 'nghiphep' %} is-active{% endif %}"
-                       href="{{ url_for('nghiphep') }}"><span class="nav-icon">▧</span>Đơn nghỉ và quỹ phép</a>
+                    <a class="nav{% if request.endpoint == 'leave.nghiphep' %} is-active{% endif %}"
+                       href="{{ url_for('leave.nghiphep') }}"><span class="nav-icon">▧</span>Đơn nghỉ và quỹ phép</a>
                     <div class="nav-label">HỢP ĐỒNG</div>
                     {% if role == "QuanTri" or has_permission("employees.view") %}
                         <a class="nav{% if request.path.startswith('/hopdong') or request.path == '/hopdong' %} is-active{% endif %}"
-                           href="{{ url_for('module',key='hopdong') }}"><span class="nav-icon">▤</span>Quản lý hợp đồng</a>
+                           href="{{ url_for('departments.module',key='hopdong') }}"><span class="nav-icon">▤</span>Quản lý hợp đồng</a>
                     {% elif session.get("user", {}).get("manv") %}
                         <a class="nav{% if request.path.startswith('/hopdong') %} is-active{% endif %}"
                            href="{{ url_for('contracts.cua_toi') }}"><span class="nav-icon">▤</span>Hợp đồng của tôi</a>
                     {% endif %}
                     <div class="nav-label">TIỀN LƯƠNG</div>
                     {% if has_permission("payroll.view") %}
-                        <a class="nav{% if request.endpoint == 'luong' %} is-active{% endif %}"
-                           href="{{ url_for('luong') }}"><span class="nav-icon">＄</span>Bảng lương</a>
+                        <a class="nav{% if request.endpoint == 'payroll.luong' %} is-active{% endif %}"
+                           href="{{ url_for('payroll.luong') }}"><span class="nav-icon">＄</span>Bảng lương</a>
                     {% endif %}
                     {% if role != "QuanTri" and session.get("user", {}).get("manv") %}
-                        <a class="nav{% if request.endpoint == 'my_salary_slip' %} is-active{% endif %}"
-                           href="{{ url_for('my_salary_slip') }}"><span class="nav-icon">＄</span>Phiếu lương của tôi</a>
+                        <a class="nav{% if request.endpoint == 'payroll.my_salary_slip' %} is-active{% endif %}"
+                           href="{{ url_for('payroll.my_salary_slip') }}"><span class="nav-icon">＄</span>Phiếu lương của tôi</a>
                     {% endif %}
                     {% if role == "QuanTri" or has_permission("reports.hr") %}
                         <div class="nav-label">BÁO CÁO</div>
-                        <a class="nav{% if request.endpoint == 'baocao' %} is-active{% endif %}"
-                           href="{{ url_for('baocao') }}"><span class="nav-icon">▥</span>Báo cáo</a>
+                        <a class="nav{% if request.endpoint == 'reports.baocao' %} is-active{% endif %}"
+                           href="{{ url_for('reports.baocao') }}"><span class="nav-icon">▥</span>Báo cáo</a>
                     {% endif %}
                     {% if role == "QuanTri" %}
                         <div class="nav-label">QUẢN TRỊ HỆ THỐNG</div>
-                        <a class="nav{% if request.endpoint == 'taikhoan' %} is-active{% endif %}"
-                           href="{{ url_for('taikhoan') }}"><span class="nav-icon">◉</span>Tài khoản và vai trò</a>
-                        <a class="nav{% if request.endpoint == 'sensitive_access_audit' %} is-active{% endif %}"
-                           href="{{ url_for('sensitive_access_audit') }}"><span class="nav-icon">◷</span>Nhật ký truy cập</a>
-                        <a class="nav{% if request.endpoint == 'employee_record_retention' %} is-active{% endif %}"
-                           href="{{ url_for('employee_record_retention') }}"><span class="nav-icon">◷</span>Hạn lưu hồ sơ</a>
+                        <a class="nav{% if request.endpoint == 'accounts.taikhoan' %} is-active{% endif %}"
+                           href="{{ url_for('accounts.taikhoan') }}"><span class="nav-icon">◉</span>Tài khoản và vai trò</a>
+                        <a class="nav{% if request.endpoint == 'reports.sensitive_access_audit' %} is-active{% endif %}"
+                           href="{{ url_for('reports.sensitive_access_audit') }}"><span class="nav-icon">◷</span>Nhật ký truy cập</a>
+                        <a class="nav{% if request.endpoint == 'employees.employee_record_retention' %} is-active{% endif %}"
+                           href="{{ url_for('employees.employee_record_retention') }}"><span class="nav-icon">◷</span>Hạn lưu hồ sơ</a>
                     {% elif has_permission("accounts.manage") %}
                         <div class="nav-label">QUẢN TRỊ HỆ THỐNG</div>
-                        <a class="nav{% if request.endpoint == 'taikhoan' %} is-active{% endif %}"
-                           href="{{ url_for('taikhoan') }}"><span class="nav-icon">◉</span>Tài khoản và vai trò</a>
+                        <a class="nav{% if request.endpoint == 'accounts.taikhoan' %} is-active{% endif %}"
+                           href="{{ url_for('accounts.taikhoan') }}"><span class="nav-icon">◉</span>Tài khoản và vai trò</a>
                     {% endif %}
                 </nav>
                 <div class="side-bottom">
                     <div class="avatar">
                         <span class="avatar-fallback">{{ session.user.user[:1]|upper }}</span>
-                        {% if not admin and session.get('user', {}).get('manv') %}<img class="avatar-image" src="{{ url_for('nhanvien_anh', manv=session.user.get('manv')) }}" alt="Ảnh đại diện">{% endif %}
+                        {% if not admin and session.get('user', {}).get('manv') %}
+                            <img class="avatar-image"
+                                 src="{{ url_for('attendance.nhanvien_anh', manv=session.user.get('manv')) }}"
+                                 alt="Ảnh đại diện">
+                        {% endif %}
                     </div>
                     <div class="profile"><b>{{ session.user.user }}</b><small>{{ role_label }}</small></div>
-                    <form method="post" action="{{ url_for('logout') }}" class="logout-form">
+                    <form method="post" action="{{ url_for('accounts.logout') }}" class="logout-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button class="logout" type="submit"><span aria-hidden="true">↗</span> Đăng xuất</button>
                     </form>
@@ -126,7 +130,13 @@
                         <span class="eyebrow">KHÔNG GIAN LÀM VIỆC</span>
                         <div class="top-title">Xin chào, {{ session.user.user }} <span aria-hidden="true">✳</span></div>
                     </div>
-                    <div class="top-actions"><span class="status-dot"></span><span>Hệ thống đang hoạt động</span><a href="{{ url_for('change_password') }}">Đổi mật khẩu <span aria-hidden="true">↗</span></a></div>
+                    <div class="top-actions">
+                        <span class="status-dot"></span>
+                        <span>Hệ thống đang hoạt động</span>
+                        <a href="{{ url_for('accounts.change_password') }}">
+                            Đổi mật khẩu <span aria-hidden="true">↗</span>
+                        </a>
+                    </div>
                 </header>
                 <section class="page">
                     {% with messages=get_flashed_messages(with_categories=true) %}
