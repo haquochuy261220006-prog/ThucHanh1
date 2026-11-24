@@ -1,81 +1,407 @@
-{% extends 'base.html' %}{% block title %}Tiền lương · QLNS{% endblock %}{% block content %}
+{% extends "base.html" %}{% from '_export_form.html' import export_form %}{% block title %}Tiền lương · QLNS{% endblock %}{% block content %}
 <div class="page-heading">
     <div>
         <span class="eyebrow blue">QUẢN TRỊ</span>
         <h1>Quản lý tiền lương</h1>
-        <p>Theo dõi bảng lương theo tháng và năm.</p>
+        <p>Lương cơ bản tính riêng cho từng nhân viên; mức thưởng chuyên cần và hệ số tăng ca được áp dụng chung theo tháng.</p>
     </div>
 </div>
 <div class="panel">
     <form method="get" class="filter-form">
         <div class="field">
             <label>Tháng</label>
-            <select name="month">{% for i in range(1,13) %}
-                <option value="{{i}}" {% if i==month %}selected{% endif %}>Tháng {{i}}</option>{% endfor %}
-            </select>
+            <select name="month">
+                {% for i in range(1,13) %}
+                    <option value="{{ i }}"
+                            {% if i==month %}selected{% endif %}>Tháng {{ i }}</option>{% endfor %}</select>
         </div>
         <div class="field">
             <label>Năm</label>
-            <input type="number" name="year" value="{{year}}" min="2000" max="2100"></div>
-            <button class="btn primary">Xem bảng lương</button>
+            <input type="number" name="year" value="{{ year }}" min="2000" max="2100">
+        </div>
+        <button class="btn secondary">Xem bảng lương</button>
+    </form>
+</div>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Quy trình kỳ lương</h2>
+            <p>Trạng thái hiện tại: <strong>{{ period_status }}</strong>. Mỗi lần tính lại tạo phiên bản và lưu người thực hiện.</p>
+        </div>
+    </div>
+    <div class="data-form">
+        {% if period_status == "Nháp" and has_payroll and period_calculated_at %}
+            <form method="post" class="salary-workflow-form">
+                <input type="hidden" name="action" value="approve">
+                <input type="hidden" name="month" value="{{ month }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <div class="field">
+                    <label for="approve-reason">Lý do phê duyệt *</label><input id="approve-reason"
+                                                                                name="LyDo"
+                                                                                maxlength="500"
+                                                                                required>
+                </div>
+                <button class="btn secondary" type="submit">Phê duyệt kỳ lương</button>
+            </form>
+        {% elif period_status == "Nháp" and has_payroll %}
+            <p>Nguồn công, hồ sơ hoặc khoản lương đã thay đổi; cần tính lại trước khi phê duyệt.</p>
+        {% elif period_status == "Nháp" %}
+            <p>Hãy tính bảng lương trước khi gửi phê duyệt.</p>
+        {% elif period_status == "Đã duyệt" %}
+            <form method="post" class="salary-workflow-form">
+                <input type="hidden" name="action" value="lock">
+                <input type="hidden" name="month" value="{{ month }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <div class="field">
+                    <label for="lock-reason">Lý do khóa kỳ *</label><input id="lock-reason"
+                                                                           name="LyDo"
+                                                                           maxlength="500"
+                                                                           required>
+                </div>
+                <button class="btn primary" type="submit">Khóa kỳ lương</button>
+            </form>
+        {% else %}
+            <p>Kỳ lương đã khóa. Có thể xem và xuất phiếu lương.</p>
+            <form method="post"
+                  class="salary-workflow-form"
+                  onsubmit="return confirm('Mở lại kỳ lương sẽ cho phép chỉnh sửa và tính lại. Tiếp tục?')">
+                <input type="hidden" name="action" value="reopen">
+                <input type="hidden" name="month" value="{{ month }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <div class="field">
+                    <label for="reopen-reason">Lý do mở lại *</label><input id="reopen-reason"
+                                                                            name="LyDo"
+                                                                            maxlength="500"
+                                                                            required>
+                </div>
+                <button class="btn secondary" type="submit">Mở lại kỳ lương</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Điều chỉnh chung cả tháng</h2>
+            <p>Mức thưởng chuyên cần: {{ '%.2f'|format(attendance_bonus_percent) }}% lương cơ bản khi đủ {{ cfg.CHUYEN_CAN_SO_NGAY }} ngày công. Tăng ca/ngày đêm dùng mức riêng theo loại ngày trong công thức lương.</p>
+        </div>
+    </div>
+    {% if period_status == "Nháp" and not active_policy %}
+        <form method="post"
+              class="data-form"
+              onsubmit="return confirm('Áp dụng mức thưởng chuyên cần cho toàn bộ nhân viên tháng {{ month }}/{{ year }}?')">
+            <input type="hidden" name="action" value="adjust_common"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="attendance-bonus-rate">Thưởng chuyên cần (% lương cơ bản)</label><input id="attendance-bonus-rate"
+                                                                                                        type="number"
+                                                                                                        name="TyLeThuongCC"
+                                                                                                        min="0"
+                                                                                                        max="100"
+                                                                                                        step="0.01"
+                                                                                                        required
+                                                                                                        value="{{ '%.2f'|format(attendance_bonus_percent) }}">
+                </div>
+                <div class="field">
+                    <label for="common-reason">Lý do áp dụng *</label>
+                    <input id="common-reason"
+                           name="LyDo"
+                           maxlength="500"
+                           required
+                           placeholder="Ví dụ: Quyết định lương tháng">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn secondary" type="submit">Áp dụng chung cho tất cả nhân viên</button>
+            </div>
         </form>
+    {% endif %}
+    {% if period_status == "Nháp" and active_policy %}<p>Thưởng chuyên cần và các mức tăng ca/ngày đêm được cố định trong phiên bản chính sách đang áp dụng. Tạo phiên bản mới nếu chính sách nội bộ thay đổi.</p>{% endif %}
+</div>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Chính sách thuế và bảo hiểm có phiên bản</h2>
+            {% if active_policy %}
+                <p>Đang áp dụng: <strong>{{ active_policy[1] }}</strong>, hiệu lực {{ active_policy[2] }}. Kỳ lương dùng chính sách có hiệu lực từ ngày đầu kỳ.</p>
+            {% else %}
+                <p><strong>Chưa có chính sách được duyệt.</strong> Hệ thống chưa tính thuế TNCN hoặc bảo hiểm bắt buộc; không tự dùng tỷ lệ mặc định.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% if admin %}
+        <details>
+            <summary>Tạo bản nháp chính sách</summary>
+            <form method="post" class="data-form">
+                <input type="hidden" name="action" value="policy_draft">
+                <input type="hidden"
+                       name="month"
+                       value="{{ month }}"><input type="hidden"
+                                                  name="year"
+                                                  value="{{ year }}">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Tên chính sách</label><input name="TenChinhSach" maxlength="120" required>
+                    </div>
+                    <div class="field">
+                        <label>Ngày hiệu lực</label><input type="date" name="NgayHieuLuc" required>
+                    </div>
+                    <div class="field">
+                        <label>Căn cứ pháp lý/quyết định nội bộ</label><input name="CanCu"
+                                                                              maxlength="1000"
+                                                                              required
+                                                                              placeholder="Số văn bản, điều khoản hoặc quyết định đã được rà soát">
+                    </div>
+                    <div class="field" style="grid-column:1/-1">
+                        <label>Quy tắc JSON (VND; tỷ lệ dạng thập phân)</label><textarea name="QuyTacJson"
+                                                                                         rows="15"
+                                                                                         required
+                                                                                         spellcheck="false"
+                                                                                         >{"base_salary_taxable":true,"base_salary_insurable":true,"salary_proration_basis":"calendar_days","standard_workdays_per_month":22,"hours_per_workday":8,"attendance_bonus_min_days":22,"attendance_bonus_rate":0,"overtime_factor":1.5,"overtime_rates":{"ordinary_day":1.5,"weekly_rest_day":2,"holiday":3,"night":0.3,"night_overtime_extra":0.2},"components":{"attendance_bonus":{"taxable":true,"insurable":false},"overtime":{"taxable":true,"insurable":false},"extra_bonus":{"taxable":true,"insurable":false},"payroll_deductions":{"taxable":false,"insurable":false}},"tax":{"personal_deduction":15500000,"dependent_deduction":6200000,"employee_contributions_reduce_taxable_base":true,"allow_other_tax_deductions":false,"brackets":[{"up_to":10000000,"rate":0.05},{"up_to":30000000,"rate":0.10},{"up_to":60000000,"rate":0.20},{"up_to":100000000,"rate":0.30},{"up_to":null,"rate":0.35}],"nonresident_flat_rate":0.20},"insurance":{"limits":{"bhxh":{"minimum_base":null,"maximum_base":50600000},"bhyt":{"minimum_base":null,"maximum_base":50600000},"bhtn":{"minimum_base":null,"maximum_base":50600000},"tnld_bnn":{"minimum_base":null,"maximum_base":50600000}},"employee_rates":{"bhxh":0.08,"bhyt":0.015,"bhtn":0.01},"employer_rates":{"bhxh":0.175,"bhyt":0.03,"bhtn":0.01,"tnld_bnn":0.005}}}</textarea><small>Mẫu nhập sẵn theo quy tắc bạn gửi với 22 ngày công; đổi thành 26 nếu quy chế công ty dùng 26. Các khoản chịu thuế/đóng bảo hiểm và phần đóng của doanh nghiệp vẫn cần HR/kế toán rà soát trước khi duyệt. Điền số liệu đã được HR/kế toán rà soát theo nhóm hợp đồng, đối tượng và thời kỳ. Giới hạn căn cứ đóng đặt riêng cho từng loại bảo hiểm. Phải có bậc thuế cuối với up_to=null.</small>
+                    </div>
+                </div>
+                <button class="btn secondary" type="submit">Lưu bản nháp</button>
+            </form>
+        </details>
+    {% endif %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Tên chính sách</th>
+                    <th>Ngày hiệu lực</th>
+                    <th>Trạng thái</th>
+                    <th>Căn cứ</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for policy in policy_rows %}<tr><td>{{ policy[0] }}</td><td>{{ policy[1] }}</td><td>{{ policy[2] }}</td><td>{{ policy[3] }}</td><td>{{ policy[4] }}</td><td>
+                    {% if admin and policy[3] == "Nháp" %}<form method="post"><input type="hidden" name="action" value="policy_approve"><input type="hidden" name="MaChinhSach" value="{{ policy[0] }}"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}"><input name="LyDo" required maxlength="500" placeholder="Lý do duyệt"><button class="btn secondary" type="submit">Duyệt</button></form>{% else %}—{% endif %}
+                </td></tr>{% else %}<tr><td colspan="6"
+                                            class="empty">Chưa có phiên bản chính sách.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Hồ sơ thuế và bảo hiểm nhân viên</h2>
+            <p>Hồ sơ có ngày hiệu lực; mỗi nhân viên cần khai báo tình trạng cư trú, số người phụ thuộc và đối tượng bảo hiểm trước khi tính theo chính sách.</p>
+        </div>
+    </div>
+    {% if admin and period_status == "Nháp" %}
+        <form method="post" class="data-form">
+            <input type="hidden" name="action" value="profile_save"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}">
+            <div class="form-grid">
+                <div class="field"><label>Nhân viên</label><select name="MaNV" required>{% for employee in policy_employees %}<option value="{{ employee[0] }}">{{ employee[1] }} · {{ employee[0] }}</option>{% endfor %}</select></div>
+                <div class="field">
+                    <label>Hiệu lực từ</label><input type="date" name="TuNgay" required>
+                </div>
+                <div class="field">
+                    <label>Cá nhân cư trú?</label><select name="LaCuTru">
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Số người phụ thuộc</label><input type="number"
+                                                            name="NguoiPhuThuoc"
+                                                            min="0"
+                                                            max="50"
+                                                            value="0"
+                                                            required>
+                </div>
+                <div class="field">
+                    <label>Thuộc diện đóng bảo hiểm?</label><select name="ThamGiaBaoHiem">
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Căn cứ đóng BH riêng (để trống = theo chính sách)</label><input type="number"
+                                                                                           name="LuongTinhBaoHiem"
+                                                                                           min="0"
+                                                                                           step="1000">
+                </div>
+            </div><button class="btn secondary" type="submit">Lưu hồ sơ có hiệu lực</button></form>{% endif %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Nhân viên</th>
+                        <th>Hiệu lực</th>
+                        <th>Cư trú</th>
+                        <th>Người phụ thuộc</th>
+                        <th>Tham gia BH</th>
+                        <th>Căn cứ đóng riêng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in profile_rows %}<tr>{% for value in profile %}<td>{{ value if value is not none else 'Theo chính sách' }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="7" class="empty">Chưa có hồ sơ thuế/bảo hiểm cho kỳ này.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="panel">
         <div class="panel-head">
             <div>
-                <h2>Bảng lương tháng {{month}}/{{year}}</h2>
-                <p>{{rows|length}} nhân viên có dữ liệu lương</p>
+                <h2>Phụ cấp, thưởng, khoản giảm và khấu trừ · {{ month }}/{{ year }}</h2>
+                <p>Đánh dấu chịu thuế/căn cứ đóng/quyền giảm trừ theo đúng chính sách đã xác minh. Khoản khấu trừ không được tự động coi là khoản giảm thu nhập chịu thuế.</p>
             </div>
         </div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>{% for c in cols %}
-                        <th>{{c}}</th>{% endfor %}<th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>{% for row in rows %}
-                    <tr>{% for v in row %}
-                        <td>{{'{:,.0f}'.format(v) if v is number else (v if v is not none else '—')}}</td>{% endfor %}
-                        <td class="actions"><form method="post" onsubmit="return confirm('Xóa dòng lương này?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{row[0]}}"><input type="hidden" name="month" value="{{month}}"><input type="hidden" name="year" value="{{year}}"><button class="action-link danger-link">Xóa</button></form></td>
-                    </tr>{% else %}
-                    <tr>
-                        <td colspan="{{cols|length+1}}" class="empty">Chưa có bảng lương cho kỳ này. Có thể cần tính lương từ ứng dụng desktop hoặc bổ sung chức năng tính lương.</td>
-                    </tr>{% endfor %}</tbody>
-                </table>
-            </div>
-        </div>
-        <div class="panel">
-            <div class="panel-head">
-                <div>
-                    <h2>Cập nhật phụ cấp / khấu trừ</h2>
-                    <p>Chọn nhân viên và nhập các khoản điều chỉnh cho kỳ đang xem.</p>
-                </div>
-            </div>
-            <form method="post" class="data-form">
-                <input type="hidden" name="month" value="{{month}}">
-                <input type="hidden" name="year" value="{{year}}">
+        {% if admin and period_status == "Nháp" %}
+            <form method="post" class="data-form salary-item-form">
+                <input type="hidden" name="action" value="item_add"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}">
                 <div class="form-grid">
+                    <div class="field"><label for="item-employee">Nhân viên</label><select id="item-employee" name="MaNV" required>{% for employee in policy_employees %}<option value="{{ employee[0] }}">{{ employee[1] }}</option>{% endfor %}</select></div>
                     <div class="field">
-                        <label>Nhân viên</label>
-                        <select name="MaNV" required>
-                            <option value="">-- Chọn nhân viên --</option>{% for p in people %}
-                            <option value="{{p[0]}}">{{p[1]}} ({{p[0]}})</option>{% endfor %}
+                        <label for="item-type">Loại khoản</label><select id="item-type" name="Loai">
+                            <option value="earning">Phụ cấp/thưởng</option>
+                            <option value="reduction">Khoản giảm có căn cứ (không phạt kỷ luật)</option>
+                            <option value="deduction">Khấu trừ sau thuế</option>
                         </select>
                     </div>
                     <div class="field">
-                        <label>Phụ cấp (VNĐ)</label>
-                        <input type="number" name="PhuCap" min="0" value="0" required>
+                        <label for="item-name">Tên khoản</label><input id="item-name" name="TenKhoan" maxlength="120" required>
                     </div>
                     <div class="field">
-                        <label>Khấu trừ (VNĐ)</label>
-                        <input type="number" name="KhauTru" min="0" value="0" required>
+                        <label for="item-amount">Số tiền (VND)</label><input id="item-amount" name="SoTien" type="number" min="0" step="1000" required>
+                    </div>
+                    <div class="field salary-item-reason">
+                        <label for="item-reason">Lý do *</label><input id="item-reason" name="LyDo" maxlength="500" required>
+                    </div>
+                    <fieldset class="salary-item-flags">
+                        <legend>Áp dụng theo chính sách</legend>
+                        <label><input type="checkbox" name="ChiuThue">Chịu thuế</label>
+                        <label><input type="checkbox" name="CanCuBaoHiem">Tính vào căn cứ bảo hiểm</label>
+                        <label><input type="checkbox" name="DuocTruThue">Được trừ khi tính thuế (cần căn cứ)</label>
+                    </fieldset>
+                </div>
+                <div class="form-actions"><button class="btn primary" type="submit">＋ Thêm khoản vào kỳ</button></div>
+            </form>
+        {% endif %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Nhân viên</th>
+                                <th>Loại</th>
+                                <th>Khoản</th>
+                                <th>Số tiền</th>
+                                <th>Chịu thuế</th>
+                                <th>Căn cứ BH</th>
+                                <th>Được trừ thuế</th>
+                                <th>Lý do</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pay_items %}<tr>{% for value in item %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}<td>{% if admin and period_status == "Nháp" %}<form method="post"><input type="hidden" name="action" value="item_delete"><input type="hidden" name="MaKhoan" value="{{ item[0] }}"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="year" value="{{ year }}"><input name="LyDo" required maxlength="500" placeholder="Lý do xóa"><button class="action-link" type="submit">Xóa</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="10" class="empty">Chưa có khoản điều chỉnh riêng trong kỳ.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Bảng lương tháng {{ month }}/{{ year }}</h2>
+                        <p>Lương giờ tăng ca = Lương cơ bản ÷ ({{ standard }} ngày công × 8 giờ). Tăng ca: ngày thường ×1,5; ngày nghỉ tuần ×2; lễ/Tết ×3. Làm đêm 22:00–06:00 được cộng 30%; OT ban đêm cộng thêm 20%.</p>
+                        <p>Giờ ghi nhận là tổng các cặp chấm vào/ra hoàn tất, lưu tại lần tính lương để đối soát; khoản tăng ca tính tiền vẫn lấy từ yêu cầu đã được xác nhận. Kỳ cũ chưa có số giờ này sẽ để trống.</p>
+                    </div>
+                    {% if period_status == "Đã khóa" %}
+                        {{ export_form('salary',{'month':month,'year':year}) }}
+                    {% endif %}
+                    {% if period_status == "Nháp" %}
+                        <form method="post"
+                              onsubmit="return confirm('Tính lại toàn bộ lương tháng {{ month }}/{{ year }} theo dữ liệu chấm công và nghỉ phép?')">
+                            <input type="hidden"
+                                   name="action"
+                                   value="calculate"><input type="hidden"
+                                                            name="month"
+                                                            value="{{ month }}">
+                            <input type="hidden" name="year" value="{{ year }}">
+                            <button class="btn primary">Tính lương tháng này</button>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for c in cols %}
+                                    <th>{{ c }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    {% for v in row %}
+                                        <td>{% if cols[loop.index0] in ["Thuế TNCN","BHXH NLĐ","BHYT NLĐ","BHTN NLĐ","BHXH DN","BHYT DN","BHTN DN","TNLĐ-BNN DN","Thực lĩnh"] and row[-1] != "Có" %}—{% else %}{{ '{:,.2f}'.format(v) if v is number and cols[loop.index0] == 'Giờ ghi nhận' else ('{:,.0f}'.format(v) if v is number else (v if v is not none else '—')) }}{% endif %}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="{{ cols|length }}" class="empty">
+                                        Chưa có bảng lương kỳ này. Chọn “Tính lương tháng này” để tạo bảng lương từ dữ liệu chấm công và nghỉ phép.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Phiếu lương cá nhân</h2>
+                        <p>Chỉ khả dụng sau khi kỳ lương được khóa.</p>
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button class="btn primary">Lưu điều chỉnh</button>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th>Phiếu lương</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for person in slip_people %}
+                                <tr>
+                                    <td>{{ person[1] }}</td>
+                                    <td><a class="action-link"
+                                           href="{{ url_for('payroll.salary_slip', manv=person[0], year=year, month=month) }}">Xem phiếu lương</a></td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="empty">Chưa có phiếu lương để hiển thị.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            </form>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Lịch sử điều chỉnh tháng {{ month }}/{{ year }}</h2>
+                        <p>Có {{ history_rows|length }} thay đổi đã lưu.</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>{% for c in history_cols %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+                        <tbody>
+                            {% for row in history_rows %}<tr>{% for value in row %}<td>{{ value if value is not none else '—' }}</td>{% endfor %}</tr>
+                        {% else %}<tr><td colspan="{{ history_cols|length }}"
+                                          class="empty">Chưa có điều chỉnh trong kỳ này.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-{% endblock %}
+    {% endblock %}
