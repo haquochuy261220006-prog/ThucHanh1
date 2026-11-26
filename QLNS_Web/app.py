@@ -4,9 +4,9 @@ import secrets
 from flask import Flask, flash, jsonify, redirect, request, session, url_for
 
 from database import db
-from permissions import ROLE_LABELS
-from contracts import bp as contracts_bp
-from schema_migrations import CURRENT_SCHEMA_VERSION
+from utils.permissions import ROLE_LABELS, ROLE_SESSION_BY_CODE
+from routes.contract_routes import bp as contracts_bp
+from database.schema_migrations import CURRENT_SCHEMA_VERSION
 from services.common_service import has_permission
 
 app = Flask(__name__)
@@ -184,7 +184,8 @@ def _check_schema_readiness():
         )[1]
         if not rows:
             return (
-                "Database schema is not upgraded. Stop web workers, run python migrate_db.py "
+                f"Database schema is not upgraded (required version {CURRENT_SCHEMA_VERSION}). "
+                "Stop web workers, run python -m database.migrate_db "
                 "with the migration account, then restart them.",
                 503,
             )
@@ -231,9 +232,10 @@ def _validate_session_version():
         return None
     try:
         rows = db.query(
-            """SELECT t.SecurityVersion,t.VaiTro,t.MaNV,n.TrangThai
-               FROM TaiKhoan t LEFT JOIN NhanVien n ON n.MaNV=t.MaNV
-               WHERE t.TenDN=?""",
+            """SELECT t.SecurityVersion,v.TenVaiTro,t.MaNV,n.TrangThai,t.TrangThai
+               FROM TaiKhoan t JOIN VaiTro v ON v.MaVaiTro=t.MaVaiTro
+               LEFT JOIN NhanVien n ON n.MaNV=t.MaNV
+               WHERE t.TenDangNhap=?""",
             (user.get("user"),),
         )[1]
     except Exception as e:
@@ -246,13 +248,15 @@ def _validate_session_version():
         session.clear()
         flash("Tài khoản không còn hoạt động. Vui lòng đăng nhập lại.", "error")
         return redirect(url_for("accounts.login"))
-    version, role, employee_id, employee_status = rows[0]
+    version, role_code, employee_id, employee_status, account_active = rows[0]
+    role = ROLE_SESSION_BY_CODE.get(role_code, role_code)
     if (
         user.get("security_version") != version
         or user.get("role") != role
         or user.get("manv") != employee_id
         or (employee_id is not None and employee_status != "Đang làm")
         or (role == "NhanVien" and employee_id is None)
+        or not account_active
     ):
         session.clear()
         flash("Phiên đăng nhập đã hết hiệu lực. Vui lòng đăng nhập lại.", "error")
@@ -348,19 +352,20 @@ _face_purge_day = None
 
 
 # Route handlers and business services are isolated from this app factory module.
-from routes.accounts import bp as accounts_bp
-from routes.attendance import bp as attendance_bp
-from routes.dashboard import bp as dashboard_bp
-from routes.departments import bp as departments_bp
-from routes.employees import bp as employees_bp
-from routes.leave import bp as leave_bp
-from routes.payroll import bp as payroll_bp
-from routes.reports import bp as reports_bp
+from routes.auth_routes import bp as accounts_bp
+from routes.attendance_routes import bp as attendance_bp
+from routes.dashboard_routes import bp as dashboard_bp
+from routes.department_routes import bp as departments_bp
+from routes.employee_routes import bp as employees_bp
+from routes.leave_routes import bp as leave_bp
+from routes.payroll_routes import bp as payroll_bp
+from routes.report_routes import bp as reports_bp
+from routes.kpi_routes import bp as kpi_bp
 
-for _blueprint in (accounts_bp, dashboard_bp, departments_bp, employees_bp, attendance_bp, leave_bp, payroll_bp, reports_bp):
+for _blueprint in (accounts_bp, dashboard_bp, departments_bp, employees_bp, attendance_bp, leave_bp, payroll_bp, reports_bp, kpi_bp):
     app.register_blueprint(_blueprint)
 
-from app_errors import register_error_handlers
+from utils.error_handlers import register_error_handlers
 register_error_handlers(app)
 
 if __name__ == "__main__":

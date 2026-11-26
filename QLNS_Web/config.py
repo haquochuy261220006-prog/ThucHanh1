@@ -1,31 +1,72 @@
 import os
+from datetime import time
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
 
 # Cấu hình kết nối SQL Server
-SERVER = r"localhost\SQLEXPRESS03"  # đổi theo máy của bạn
-DATABASE = "NHANSU_PY"  # database mới cho bản Python (tránh đụng schema cũ)
-DRIVER = "ODBC Driver 17 for SQL Server"  # hoặc "ODBC Driver 18 for SQL Server"
-WINDOWS_AUTH = True  # False -> dùng USER/PASSWORD bên dưới
-USER = "sa"
+SERVER = os.environ.get("DB_SERVER", r"localhost\SQLEXPRESS03")
+DATABASE = os.environ.get("DB_NAME", "NHANSU_PY")
+DRIVER = os.environ.get("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+WINDOWS_AUTH = os.environ.get("DB_WINDOWS_AUTH", "true").strip().lower() in (
+    "1", "true", "yes", "on"
+)
+USER = os.environ.get("DB_USER", "sa")
 PASSWORD = os.environ.get("DB_PASSWORD", "")  # nên đặt qua biến môi trường thay vì ghi vào mã nguồn
+if os.environ.get("APP_ENV", "").lower() == "production":
+    missing = [name for name in ("DB_SERVER", "DB_NAME") if not os.environ.get(name)]
+    if not WINDOWS_AUTH:
+        missing.extend(name for name in ("DB_USER", "DB_PASSWORD") if not os.environ.get(name))
+    if missing:
+        raise RuntimeError("Production database settings are missing: " + ", ".join(missing))
 
-CONG_CHUAN = 25  # số ngày công chuẩn/tháng -> lương ngày = lương cơ bản / CONG_CHUAN
-GIO_VAO_CHUAN = "08:30"  # vào sau giờ này tính là đi muộn
-
+CONG_CHUAN = int(os.environ.get("PAYROLL_STANDARD_WORKDAYS", "22"))  # số ngày công chuẩn/tháng -> lương ngày = lương cơ bản / CONG_CHUAN
+if CONG_CHUAN not in (22, 26):
+    raise ValueError("PAYROLL_STANDARD_WORKDAYS must be 22 or 26")
+GIO_VAO_CHUAN = os.environ.get("ATTENDANCE_START_TIME", "08:00")
+GIO_NGHI_TRUA_BAT_DAU = os.environ.get("ATTENDANCE_LUNCH_START", "12:00")
+GIO_NGHI_TRUA_KET_THUC = os.environ.get("ATTENDANCE_LUNCH_END", "13:00")
+GIO_RA_CHUAN = os.environ.get("ATTENDANCE_END_TIME", "17:00")
+try:
+    _lunch_start = time.fromisoformat(GIO_NGHI_TRUA_BAT_DAU)
+    _lunch_end = time.fromisoformat(GIO_NGHI_TRUA_KET_THUC)
+    time.fromisoformat(GIO_VAO_CHUAN)
+    time.fromisoformat(GIO_RA_CHUAN)
+except ValueError as error:
+    raise ValueError("Attendance times must use HH:MM format") from error
+if _lunch_end <= _lunch_start:
+    raise ValueError("ATTENDANCE_LUNCH_END must be later than ATTENDANCE_LUNCH_START")
 # ---- Quy tắc tính lương (xem payroll.py) ----
 NGAY_NGHI_TUAN = (6,)  # ngày nghỉ cố định trong tuần: 0=Thứ 2 ... 5=Thứ 7, 6=Chủ nhật
 CHUYEN_CAN_SO_NGAY = 25  # đi làm từ số ngày này trở lên trong tháng thì được thưởng chuyên cần
 CHUYEN_CAN_TY_LE = 0.25  # thưởng chuyên cần = 25% lương cơ bản
 MUON_TRU_NGAY = 0  # chỉ ghi nhận vi phạm; không tự động khấu trừ tiền lương
 NGHI_KP_TRU_NGAY = 1  # mỗi ngày nghỉ không phép trừ 1 ngày lương
-GIO_RA_CHUAN = "17:30"  # ra về sau giờ này tính là tăng ca
 GIO_LAM_NGAY = 8  # số giờ của 1 ngày công (để đổi ngày lương -> lương giờ)
 HE_SO_TANG_CA = 1.5  # tiền tăng ca = số giờ x lương giờ x hệ số này
 
 
 def conn_str(database=None):
     db = database or DATABASE
-    s = f"DRIVER={{{DRIVER}}};SERVER={SERVER};DATABASE={db};TrustServerCertificate=yes;"
-    s += "Trusted_Connection=yes;" if WINDOWS_AUTH else f"UID={USER};PWD={PASSWORD};"
+
+    def value(raw):
+        return "{" + str(raw).replace("}", "}}") + "}"
+
+    encrypt = os.environ.get("DB_ENCRYPT", "yes")
+    trust_certificate = os.environ.get(
+        "DB_TRUST_SERVER_CERTIFICATE",
+        "no" if os.environ.get("APP_ENV", "").lower() == "production" else "yes",
+    )
+    s = (
+        f"DRIVER={value(DRIVER)};SERVER={value(SERVER)};DATABASE={value(db)};"
+        f"Encrypt={encrypt};TrustServerCertificate={trust_certificate};"
+    )
+    s += "Trusted_Connection=yes;" if WINDOWS_AUTH else f"UID={value(USER)};PWD={value(PASSWORD)};"
     return s
 
 
@@ -78,3 +119,8 @@ if not 0.0 <= FACE_ANTISPOOF_THRESHOLD <= 1.0 or not 0.0 <= FACE_LIVENESS_THRESH
     raise ValueError("Face liveness thresholds must be between 0 and 1")
 if FACE_RETENTION_DAYS < 1:
     raise ValueError("FACE_RETENTION_DAYS must be a positive integer")
+
+
+
+
+
