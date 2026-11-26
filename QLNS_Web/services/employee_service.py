@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 from cryptography.fernet import Fernet
 from flask import session
-from permissions import role_can
+from utils.permissions import role_can
 
 from database import db
 

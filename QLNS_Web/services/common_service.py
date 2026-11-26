@@ -4,7 +4,7 @@ from datetime import datetime, timezone, date
 
 from flask import current_app, session
 
-from permissions import role_can
+from utils.permissions import role_can
 import re
 
 
