@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Hồ sơ cá nhân · QLNS{% endblock %}
+{% block content %}
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow blue">TÀI KHOẢN CỦA TÔI</span>
+            <h1>Hồ sơ cá nhân</h1>
+            <p>Mã nhân viên: {{ profile.MaNVHT }}. Bạn có thể sửa thông tin cá nhân và ảnh hồ sơ.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="btn secondary" href="{{ url_for('employees.employee_profile_audit', manv=profile.MaNV) }}">Nhật ký hồ sơ</a>
+            <a class="btn secondary" href="{{ url_for('attendance.chamcong') }}">Quay lại chấm công</a>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Thông tin công tác</h2>
+                <p>Nhân viên không thể tự thay đổi chức vụ, phòng ban hoặc vị trí công việc.</p>
+            </div>
+        </div>
+        <div class="employment-summary">
+            <div class="employment-card">
+                <span class="employment-icon" aria-hidden="true">▦</span>
+                <div><small>PHÒNG BAN</small><strong>{{ profile.TenPB or 'Chưa phân công' }}</strong></div>
+            </div>
+            <div class="employment-card">
+                <span class="employment-icon" aria-hidden="true">✳</span>
+                <div><small>CHỨC VỤ</small><strong>{{ profile.TenCV or 'Chưa phân công' }}</strong></div>
+            </div>
+            <div class="employment-card">
+                <span class="employment-icon" aria-hidden="true">⌖</span>
+                <div><small>VỊ TRÍ CÔNG VIỆC</small><strong>{{ profile.TenViTri or 'Chưa phân công' }}</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Thông tin cá nhân</h2>
+                <p>Ảnh hồ sơ được lưu trong cơ sở dữ liệu và dùng để đăng ký mẫu khuôn mặt chấm công.</p>
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="data-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div class="field"><label for="HoTen">Họ tên *</label><input id="HoTen" name="HoTen" value="{{ profile.HoTen }}" maxlength="100" required></div>
+                <div class="field"><label for="NgaySinh">Ngày sinh</label><input id="NgaySinh" name="NgaySinh" type="date" value="{{ profile.NgaySinh.isoformat() if profile.NgaySinh else '' }}"></div>
+                <div class="field"><label for="GioiTinh">Giới tính</label><select id="GioiTinh" name="GioiTinh"><option value="">-- Chọn --</option>{% for gender in ('Nam','Nữ','Khác') %}<option value="{{ gender }}"{% if profile.GioiTinh==gender %} selected{% endif %}>{{ gender }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="SDT">Số điện thoại</label><input id="SDT" name="SDT" type="tel" value="{{ profile.SDT or '' }}" maxlength="20"></div>
+                <div class="field"><label for="Email">Email</label><input id="Email" name="Email" type="email" value="{{ profile.Email or '' }}" maxlength="100"></div>
+                <div class="field"><label for="CCCD">CCCD</label><input id="CCCD" name="CCCD" value="{{ profile.CCCD or '' }}" maxlength="20" inputmode="numeric"></div>
+                <div class="field"><label for="DiaChi">Địa chỉ</label><input id="DiaChi" name="DiaChi" value="{{ profile.DiaChi or '' }}" maxlength="255"></div>
+                <div class="field">
+                    <label for="AnhHoSo">Ảnh mẫu nhận diện chấm công</label>
+                    <input id="AnhHoSo" name="AnhHoSo" type="file" accept="image/jpeg,image/png,image/webp">
+                    <small>Ảnh này được lưu trong hồ sơ để tạo mẫu nhận diện khuôn mặt. JPEG, PNG hoặc WEBP, tối đa 5 MB. Đổi ảnh sẽ yêu cầu tạo lại mẫu.</small>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn primary" type="submit">Lưu hồ sơ</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
