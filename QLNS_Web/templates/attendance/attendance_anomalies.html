@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Cảnh báo chấm công · QLNS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow blue">RÀ SOÁT DỮ LIỆU</span>
+        <h1>Bất thường chấm công</h1>
+        <p>Cảnh báo dùng các ngưỡng minh bạch để HR rà soát. Đây không phải kết luận vi phạm.</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('attendance.chamcong', month=month, year=year) }}">Về chấm công</a>
+</div>
+<section class="panel">
+    <form method="get" class="filter-form">
+        <div class="field"><label for="anomaly-month">Tháng</label><input id="anomaly-month" type="number" name="month" min="1" max="12" value="{{ month }}" required></div>
+        <div class="field"><label for="anomaly-year">Năm</label><input id="anomaly-year" type="number" name="year" min="2000" max="{{ today.year }}" value="{{ year }}" required></div>
+        <button class="btn primary" type="submit">Xem kỳ</button>
+    </form>
+    <ul class="muted">
+        <li>Đi muộn hoặc về sớm ít nhất 3 lần trong tháng.</li>
+        <li>Thiếu giờ vào/ra ở ngày đã qua; ngày hiện tại chưa hoàn tất không bị cảnh báo.</li>
+        <li>Giờ vào/ra lệch quá ngưỡng cho phép so với ca đã phân công.</li>
+        <li>Thời gian làm được ghi nhận trên 16 giờ/ngày, bản ghi trùng, hoặc tăng ca đã xác nhận trên 40 giờ/tháng.</li>
+    </ul>
+    <div class="ai-anomaly-explainer">
+        <form id="ai-anomaly-form" method="post" action="{{ url_for('attendance.ai_explain_attendance_anomalies') }}">
+            <input type="hidden" name="month" value="{{ month }}">
+            <input type="hidden" name="year" value="{{ year }}">
+            <button class="btn secondary" type="submit">AI giải thích số liệu tổng hợp</button>
+        </form>
+        <p id="ai-anomaly-explanation" role="status" aria-live="polite"></p>
+        <small class="muted">AI chỉ nhận số lượng theo nhóm cảnh báo, không nhận tên nhân viên hay chi tiết lương. HR phải kiểm tra dữ liệu gốc.</small>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Mức rà soát</th><th>Nhân viên</th><th>Loại</th><th>Chi tiết</th><th>Ngày</th></tr></thead>
+            <tbody>
+            {% for alert in alerts %}
+                <tr><td>{{ alert.severity }}</td><td>{{ alert.employee }}</td><td>{{ alert.category }}</td><td>{{ alert.message }}</td><td>{{ alert.day or '—' }}</td></tr>
+            {% else %}
+                <tr><td colspan="5" class="empty">Không có cảnh báo theo ngưỡng trong kỳ này.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+<script src="{{ url_for('static', filename='js/attendance-ai-anomalies.js', v='ai-anomaly-1') }}" defer></script>
+{% endblock %}

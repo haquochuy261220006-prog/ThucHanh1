@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Tổng quan · QLNS{% endblock %}
 {% block content %}
     <div class="page-heading dashboard-heading">
@@ -34,6 +34,17 @@
             <span>Đơn nghỉ chờ duyệt</span><strong>{{ stats.leaves or 0 }}</strong><small>Yêu cầu đang chờ phản hồi</small>
         </a>
     </div>
+    <section class="panel dashboard-report-panel">
+        <div class="panel-head"><div><span class="eyebrow blue">BÁO CÁO THÁNG</span><h2>Nhân sự và tài chính · {{ now }}</h2><p>Chỉ dùng quỹ lương của kỳ đã khóa; chưa khóa thì chưa có số liệu quỹ lương chính thức.</p></div></div>
+        <div class="dashboard-report-cards">
+            <article><small>Nhân viên hiện tại</small><strong>{{ stats.staff or 0 }}</strong></article>
+            <article><small>Tỷ lệ nghỉ việc tháng này</small><strong>{{ '%.2f'|format(stats.turnover or 0) }}%</strong></article>
+            <article><small>Tỷ lệ chuyên cần tháng này</small><strong>{{ '%.2f'|format(stats.attendance_rate or 0) }}%</strong></article>
+            {% if can_view_payroll %}<article><small>Tổng chi phí lương kỳ đã khóa</small><strong>{{ '{:,.0f}'.format(stats.payroll_cost or 0) }} VNĐ</strong></article><article><small>Tổng thực lĩnh</small><strong>{{ '{:,.0f}'.format(stats.payroll_net or 0) }} VNĐ</strong></article>{% endif %}
+            {% if can_view_kpi %}<article><small>Nhân viên được đánh giá KPI</small><strong>{{ stats.kpi_evaluated or 0 }}</strong></article><article><small>Điểm KPI trung bình</small><strong>{{ '%.2f'|format(stats.kpi_average or 0) }}</strong></article><article><small>KPI đã xác nhận</small><strong>{{ stats.kpi_confirmed or 0 }}</strong></article><article><small>Thưởng KPI đã xác nhận</small><strong>{{ '{:,.0f}'.format(stats.kpi_bonus or 0) }} VNĐ</strong></article>{% endif %}
+        </div>
+        {% if can_view_payroll %}<h3>Biến động quỹ lương 6 tháng</h3><div class="column-chart dashboard-payroll-chart">{% set chart_max = trend_max %}{% for row in trend %}{% set amount = row[3] or 0 %}<div class="column-item" title="{{ row[0] }}: {{ '{:,.0f}'.format(amount) }} VNĐ"><b>{{ '{:,.0f}'.format(amount / 1000000) }} tr</b><div class="column-track"><div class="column-fill" style="height:{{ (amount * 100 / chart_max) if chart_max else 0 }}%"></div></div><span>{{ row[0] }}</span></div>{% endfor %}</div><p class="muted">Cột thể hiện tổng chi phí doanh nghiệp (tổng lương cộng phần bảo hiểm doanh nghiệp). Kỳ chưa khóa hiển thị 0.</p>{% endif %}
+    </section>
     <div class="dashboard-lower">
         <section class="panel recent-panel">
             <div class="panel-head">
@@ -66,3 +77,4 @@
 </aside>
 </div>
 {% endblock %}
+
