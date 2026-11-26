@@ -1,8 +1,8 @@
 import unittest
 
-from permissions import role_can, module_permission
+from utils.permissions import role_can, module_permission
 from migrate_db import _add_sql_error_context
-from schema_migrations import (
+from database.schema_migrations import (
     CURRENT_SCHEMA_VERSION,
     begin_migration,
     finish_migration,
@@ -23,8 +23,12 @@ class RolePermissionTests(unittest.TestCase):
         self.assertTrue(role_can("HR", "employees.view"))
         self.assertTrue(role_can("HR", "employees.create"))
         self.assertTrue(role_can("KeToan", "payroll.calculate"))
-        self.assertFalse(role_can("KeToan", "employees.view"))
-        self.assertTrue(role_can("QuanLy", "employees.team_view"))
+        # Legacy accounting accounts are migrated to HR_ACCOUNTANT and retain
+        # the employee-management permissions of that combined role.
+        self.assertTrue(role_can("KeToan", "employees.view"))
+        # Legacy manager accounts normalize to the employee role. Team scope
+        # requires a separately assigned permission, which is not in that role.
+        self.assertFalse(role_can("QuanLy", "employees.team_view"))
         self.assertFalse(role_can("QuanLy", "employees.view_salary"))
         self.assertTrue(role_can("NhanVien", "self.attendance"))
         self.assertFalse(role_can("NhanVien", "employees.view"))
@@ -73,8 +77,8 @@ class SchemaMigrationTests(unittest.TestCase):
         from pathlib import Path
 
         root = Path(__file__).resolve().parents[1]
-        migration = (root / "migrate_db.py").read_text(encoding="utf-8")
-        helpers = (root / "schema_migrations.py").read_text(encoding="utf-8")
+        migration = (root / "database" / "migrate_db.py").read_text(encoding="utf-8")
+        helpers = (root / "database" / "schema_migrations.py").read_text(encoding="utf-8")
         self.assertNotIn("drop_custom_profile_fields", migration)
         self.assertNotIn("DROP TABLE dbo.TruongMoRongNhanVien", helpers)
         self.assertNotIn("DROP TABLE dbo.GiaTriMoRongNhanVien", helpers)
